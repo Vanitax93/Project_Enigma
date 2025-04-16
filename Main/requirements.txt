@@ -1,0 +1,8 @@
+Flask>=2.0
+google-generativeai>=0.4 # Check for the latest version
+python-dotenv>=0.19
+
+Server Setup:
+init
+Limit connections
+
