@@ -1,8 +1,6 @@
 Flask>=2.0
-google-generativeai>=0.4 # Check for the latest version
+google-generativeai>=0.4
 python-dotenv>=0.19
+SQLAlchemy
 
-Server Setup:
-init
-Limit connections
 

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Enigma - API Tester</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Add custom styles if needed */
+        body { font-family: sans-serif; }
+        /* Basic styling for escaped HTML in description */
+        #puzzle-description .escaped-tag {
+            color: #9d174d; /* Pinkish color for tags */
+            font-weight: bold;
+        }
+         /* Styling for code blocks (pre/code) */
+        #puzzle-description code {
+            background-color: #f0f0f0;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #374151; /* Darker gray for code content */
+        }
+        #puzzle-description pre {
+            background-color: #f3f4f6; /* Lighter gray background */
+            padding: 1em;
+            border: 1px solid #e5e7eb; /* Light border */
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap; /* Wrap long lines */
+            word-wrap: break-word; /* Break words if needed */
+        }
+        #puzzle-description pre code {
+            background-color: transparent; /* Remove background inside pre */
+            padding: 0;
+            border: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+
+    <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold mb-4 text-center">Project Enigma API Tester</h1>
+
+        <div class="mb-6 border-b pb-4">
+            <h2 class="text-xl font-semibold mb-3">1. Generate Puzzle</h2>
+            <div class="flex space-x-4 mb-3">
+                <div class="flex-1">
+                    <label for="domain-select" class="block text-sm font-medium text-gray-700">Domain:</label>
+                    <select id="domain-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md border">
+                        <option>Frontend</option>
+                        <option>Backend</option>
+                        <option>Database</option>
+                        <option>AI Engineering</option>
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label for="difficulty-select" class="block text-sm font-medium text-gray-700">Difficulty:</label>
+                    <select id="difficulty-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md border">
+                        <option>Easy</option>
+                        <option>Medium</option>
+                        <option>Hard</option>
+                    </select>
+                </div>
+            </div>
+            <button id="generate-btn" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Generate Puzzle
+            </button>
+        </div>
+
+        <div class="mb-6 border-b pb-4">
+            <h2 class="text-xl font-semibold mb-3">2. Current Puzzle</h2>
+            <div id="puzzle-display-container" class="bg-gray-50 p-4 rounded border border-gray-200 min-h-[100px]">
+                 <p class="text-gray-500 italic">No puzzle generated yet.</p>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold mb-3">3. Submit Answer</h2>
+            <div class="mb-3">
+                <label for="player-id-input" class="block text-sm font-medium text-gray-700">Player ID (for testing):</label>
+                <input type="number" id="player-id-input" value="1" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
+            <div class="mb-3">
+                <label for="answer-input" class="block text-sm font-medium text-gray-700">Your Answer:</label>
+                <textarea id="answer-input" rows="4" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Enter your answer (e.g., 'A', code snippet, explanation...)"></textarea>
+            </div>
+            <button id="validate-btn" class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" disabled>
+                Validate Answer
+            </button>
+        </div>
+
+        <div>
+            <h2 class="text-xl font-semibold mb-3">4. Result</h2>
+            <div id="result-display" class="bg-gray-50 p-4 rounded border border-gray-200 min-h-[50px]">
+                <p class="text-gray-500 italic">Submit an answer to see the result.</p>
+            </div>
+        </div>
+
+        <div id="status-display" class="mt-4 text-sm text-red-600"></div>
+
+    </div>
+
+    <script>
+        const generateBtn = document.getElementById('generate-btn');
+        const validateBtn = document.getElementById('validate-btn');
+        const domainSelect = document.getElementById('domain-select');
+        const difficultySelect = document.getElementById('difficulty-select');
+        // Updated reference to the main container for puzzle display
+        const puzzleDisplayContainer = document.getElementById('puzzle-display-container');
+        const playerIdInput = document.getElementById('player-id-input');
+        const answerInput = document.getElementById('answer-input');
+        const resultDisplay = document.getElementById('result-display');
+        const statusDisplay = document.getElementById('status-display');
+
+        // Backend API URLs
+        const GENERATE_URL = 'http://127.0.0.1:5000/generate_puzzle';
+        const VALIDATE_URL = 'http://127.0.0.1:5000/validate_answer';
+
+        let currentPuzzleId = null;
+        let currentValidationCriteria = null; // Store criteria for validation request
+
+        // --- Helper Function to Escape HTML ---
+        function escapeHTML(str) {
+            // Use a temporary element to leverage the browser's escaping
+            // More robust than simple replace for various characters
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+            // Alternative simple replace (less robust):
+            // return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+
+
+        // --- Event Listeners ---
+
+        generateBtn.addEventListener('click', fetchPuzzle);
+        validateBtn.addEventListener('click', submitAnswer);
+
+        // --- Functions ---
+
+        async function fetchPuzzle() {
+            const domain = domainSelect.value;
+            const difficulty = difficultySelect.value;
+            clearStatus();
+            // Update loading state in the main container
+            puzzleDisplayContainer.innerHTML = '<p class="text-gray-500 italic">Generating...</p>';
+            validateBtn.disabled = true; // Disable validate button while fetching
+
+            try {
+                const response = await fetch(GENERATE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ domain, difficulty }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP error! status: ${response.status}`);
+                }
+
+                console.log("Puzzle Data Received:", data); // Log for debugging
+
+                // --- MODIFICATION START: Clear container and rebuild content ---
+                // Clear the entire container first
+                puzzleDisplayContainer.innerHTML = '';
+
+                // Create and append puzzle description div
+                const descriptionDiv = document.createElement('div');
+                descriptionDiv.id = 'puzzle-description'; // Keep ID if needed for styling
+                descriptionDiv.className = 'prose max-w-none'; // Apply styling classes
+
+                // --- Escape HTML within the description before setting innerHTML ---
+                // 1. Escape the entire description to handle tags within text (like options A, B, C, D)
+                let escapedDescription = escapeHTML(data.puzzle_description);
+                // 2. Replace escaped newlines with <br> tags for line breaks
+                escapedDescription = escapedDescription.replace(/\n/g, '<br>');
+                // 3. Set the innerHTML with the escaped content
+                descriptionDiv.innerHTML = escapedDescription;
+                // --- End HTML Escaping ---
+
+                puzzleDisplayContainer.appendChild(descriptionDiv);
+
+                // Create and append puzzle ID paragraph
+                const idParagraph = document.createElement('p');
+                idParagraph.className = 'text-sm text-gray-600 mt-2';
+                idParagraph.innerHTML = 'Puzzle ID: <span id="puzzle-id-display"></span>'; // Use innerHTML to create span
+                puzzleDisplayContainer.appendChild(idParagraph);
+                // Now find the span within the paragraph and set its text
+                idParagraph.querySelector('#puzzle-id-display').textContent = data.puzzle_id;
+
+
+                // --- HIDE VALIDATION CRITERIA ---
+                // Validation criteria is not displayed to the user
+                // --- END HIDE VALIDATION CRITERIA ---
+
+
+                // Store data needed for validation (Criteria is still stored even if not displayed)
+                currentPuzzleId = data.puzzle_id;
+                currentValidationCriteria = data.validation_criteria;
+
+                // Clear previous results and enable validation
+                answerInput.value = '';
+                resultDisplay.innerHTML = '<p class="text-gray-500 italic">Submit an answer to see the result.</p>';
+                validateBtn.disabled = false;
+                // No need to remove placeholder specifically, as container was cleared
+
+            } catch (error) {
+                console.error('Error fetching puzzle:', error);
+                // Update error message in the main container
+                puzzleDisplayContainer.innerHTML = `<p class="text-red-600">Error fetching puzzle: ${error.message}</p>`;
+                statusDisplay.textContent = `Error: ${error.message}`;
+                currentPuzzleId = null;
+                currentValidationCriteria = null;
+            }
+        }
+
+        async function submitAnswer() {
+            const userAnswer = answerInput.value;
+            const playerId = playerIdInput.value;
+
+            if (currentPuzzleId === null || !userAnswer.trim() || !playerId.trim()) {
+                setStatus('Please generate a puzzle, enter an answer, and provide a Player ID.');
+                return;
+            }
+            clearStatus();
+            resultDisplay.innerHTML = '<p class="text-gray-500 italic">Validating...</p>'; // Show loading state
+
+            try {
+                const response = await fetch(VALIDATE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        puzzle_id: currentPuzzleId,
+                        player_id: parseInt(playerId), // Ensure player_id is an integer
+                        user_answer: userAnswer,
+                        // We don't need to send criteria if backend fetches it by ID
+                        // validation_criteria: currentValidationCriteria
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP error! status: ${response.status}`);
+                }
+
+                console.log("Validation Result:", data); // Log for debugging
+
+                // Display result
+                resultDisplay.innerHTML = `
+                    <p class="font-semibold">Result: <span class="${data.correct ? 'text-green-600' : 'text-red-600'}">${data.correct ? 'Correct' : 'Incorrect'}</span></p>
+                    <p class="mt-1 text-sm text-gray-700">Feedback: ${data.feedback || 'No feedback provided.'}</p>
+                `;
+
+            } catch (error) {
+                console.error('Error validating answer:', error);
+                resultDisplay.innerHTML = `<p class="text-red-600">Error validating answer: ${error.message}</p>`;
+                setStatus(`Error: ${error.message}`);
+            }
+        }
+
+        function setStatus(message) {
+            statusDisplay.textContent = message;
+        }
+
+        function clearStatus() {
+            statusDisplay.textContent = '';
+        }
+
+    </script>
+
+</body>
+</html>
