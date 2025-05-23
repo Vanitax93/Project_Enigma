@@ -1,0 +1,90 @@
+/* Custom styles for Project Enigma API Tester */
+body {
+    font-family: 'Inter', sans-serif; /* Use Inter font, ensure it's linked in HTML */
+    /* Tailwind handles base body styling, so only add overrides or specifics here */
+}
+
+/* Improve spacing and readability for sections */
+.puzzle-section {
+    margin-bottom: 1.5rem; /* 24px */
+    padding-bottom: 1.5rem; /* 24px */
+    border-bottom: 1px solid #e5e7eb; /* coolGray-200 */
+}
+.puzzle-section:last-child { /* Remove border and extra spacing from the very last section */
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* Style for labels */
+label {
+    margin-bottom: 0.25rem; /* 4px */
+    display: block; /* Ensures label takes its own line if needed */
+}
+
+/* Transition for buttons */
+button {
+    transition: background-color 0.2s ease-in-out;
+}
+/* Styling for disabled buttons (Tailwind also provides opacity utilities) */
+button:disabled {
+    cursor: not-allowed;
+    /* opacity: 0.6; Tailwind's opacity-60 can also be used directly on the element */
+}
+
+/* --- Styling for Code Blocks (Prism.js) --- */
+/* Ensure pre takes block layout and handles overflow */
+/* Target pre tags within the puzzle display specifically */
+#puzzle-display-container pre[class*="language-"] {
+    margin-top: 1em;
+    margin-bottom: 1em;
+    padding: 1em;
+    overflow: auto;
+    border-radius: 0.375rem; /* Tailwind's rounded-md */
+    /* Okaidia theme (linked in HTML) handles background/text color for code blocks */
+}
+
+/* Style inline code (not inside a <pre> block) */
+/* Target inline code within the puzzle display specifically */
+#puzzle-display-container :not(pre) > code[class*="language-"] {
+    padding: 0.2em 0.4em;
+    margin: 0;
+    font-size: 85%;
+    background-color: #f3f4f6; /* Tailwind's gray-100, slightly darker for inline code bg */
+    color: #374151; /* Tailwind's gray-700, darker text for inline code */
+    border-radius: 3px;
+}
+
+/* Style for Prism.js line numbers plugin (optional) */
+.line-numbers .line-numbers-rows {
+    border-right: 1px solid #555; /* Slightly darker border to complement okaidia theme */
+    padding-right: 0.8em;
+}
+
+/* Result feedback styling */
+.feedback-correct {
+    color: #16a34a; /* Tailwind's green-600 */
+}
+.feedback-incorrect {
+    color: #dc2626; /* Tailwind's red-600 */
+}
+.feedback-text {
+    margin-top: 0.5rem; /* 8px */
+    font-size: 0.9rem;
+    color: #4b5563; /* Tailwind's coolGray-600 */
+}
+
+/* Hint Display Styling */
+#hint-display {
+    display: none; /* Initially hidden, shown via JavaScript */
+    /* Tailwind classes are used directly on the element for background, border, text color, padding, margin, rounded corners, and shadow.
+       Example: mt-3 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-md shadow-sm
+       No additional CSS needed here unless for very specific overrides.
+    */
+}
+
+/* Ensure status display has a consistent height to prevent layout shifts */
+#status-display {
+    /* min-height: 1.25rem; /* Tailwind's h-5, adjust if text can wrap to two lines */
+    /* Tailwind class h-5 is used directly on the element */
+}
