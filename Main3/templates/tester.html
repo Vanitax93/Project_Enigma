@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Enigma - API Tester (Terminal Style)</title>
+    <link rel="stylesheet" href="style.css"> <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+    <style>
+        /* Minimal inline styles for base functionality & overrides if needed */
+        select, textarea, input[type="text"], input[type="number"] {
+            background-color: transparent;
+            border: none;
+            border-bottom: 1px solid #00FF00;
+            color: #00FF00;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            padding: 8px;
+            outline: none;
+            transition: border-color 1s ease-in-out, color 1s ease-in-out;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        body.corruption-level-1 select, body.corruption-level-1 textarea, body.corruption-level-1 input[type="text"], body.corruption-level-1 input[type="number"] { border-color: #9370DB; color: #9370DB; }
+        body.corruption-level-2 select, body.corruption-level-2 textarea, body.corruption-level-2 input[type="text"], body.corruption-level-2 input[type="number"] { border-color: #FF6347; color: #FF6347; }
+
+        .display-area {
+            border: 1px solid rgba(0, 255, 0, 0.6);
+            padding: 15px;
+            margin-top: 15px;
+            background: rgba(0, 30, 0, 0.2);
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+        }
+        /* #result-display min-height removed, let content or your CSS define it */
+
+        body.corruption-level-1 .display-area { border-color: rgba(138, 43, 226, 0.6); }
+        body.corruption-level-2 .display-area { border-color: rgba(255, 69, 0, 0.6); }
+
+        .button-flex-item button { flex-shrink: 0; }
+        .status-message-area { min-height: 1.5em; margin-top: 10px; }
+
+        .line-numbers .line-numbers-rows > span::before { color: #555 !important; }
+        body.corruption-level-1 .line-numbers .line-numbers-rows > span::before { color: #7b688c !important; }
+        body.corruption-level-2 .line-numbers .line-numbers-rows > span::before { color: #a84230 !important; }
+
+        #hint-display-themed {
+            margin-top: 15px; padding: 10px;
+            border: 1px dashed #FFD700;
+            background-color: rgba(50, 50, 0, 0.2);
+            color: #FFD700; display: none;
+        }
+        #hint-display-themed .hint-title { font-weight: bold; display: block; margin-bottom: 5px; }
+        body.corruption-level-1 #hint-display-themed { border-color: #b39ddb; color: #b39ddb; background-color: rgba(30,0,50,0.2); }
+        body.corruption-level-2 #hint-display-themed { border-color: #ff8a65; color: #ff8a65; background-color: rgba(50,10,0,0.2); }
+
+        .validation-status-text { /* For "Correct" / "Incorrect" block */
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px; /* Can be overridden by your style.css */
+            font-weight: bold;
+            text-align: center; /* Ensures text inside the span is centered if span has width */
+        }
+        .result-line { /* New class for the "Result: Correct/Incorrect" line */
+            display: flex;
+            align-items: center; /* Vertically align "Result:" and the status block */
+            /* justify-content: center; /* To center the whole line if result-display is wider */
+            margin-bottom: 8px; /* Space before detailed feedback */
+        }
+        .result-label { /* New class for "Result:" text */
+            margin-right: 8px; /* Space between "Result:" and the status block */
+        }
+
+    </style>
+</head>
+<body>
+    <div class="terminal-container">
+        <header>
+            <h1 class="glitch" data-text=">&nbsp;Project Enigma: API Tester">>&nbsp;Project Enigma: API Tester</h1>
+            <p class="scanline flicker-subtle">Diagnostic Interface v1.0</p>
+        </header>
+
+        <main>
+            <div class="form-group">
+                <h2>0. Create Test Player (Optional)</h2>
+                <div style="display: flex; align-items: flex-end; gap: 10px; margin-top:10px;">
+                    <div style="flex-grow: 1;">
+                        <label for="create-username-input">> Username:</label>
+                        <input type="text" id="create-username-input" value="test_player_ui">
+                    </div>
+                    <div class="button-flex-item">
+                        <button id="create-player-btn" class="submit-button">> Create Player_</button>
+                    </div>
+                </div>
+                <div id="create-player-status" class="feedback neutral status-message-area"></div>
+            </div>
+
+            <div class="form-group">
+                <h2>1. Generate Puzzle</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px; margin-top:10px;">
+                    <div>
+                        <label for="domain-select">> Domain:</label>
+                        <select id="domain-select">
+                            <option>Frontend</option>
+                            <option>Backend</option>
+                            <option>Database</option>
+                            <option>AI Engineering</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="difficulty-select">> Difficulty:</label>
+                        <select id="difficulty-select">
+                            <option>Easy</option>
+                            <option>Medium</option>
+                            <option>Hard</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="generate-btn" class="submit-button" style="width: 100%;">> Generate Puzzle_</button>
+            </div>
+
+            <div class="riddle-section" style="margin-top:20px;">
+                <h2>2. Current Puzzle</h2>
+                <div id="puzzle-display-container" class="display-area">
+                    <p class="flicker-subtle">:: No puzzle generated yet. Click "Generate Puzzle" above ::</p>
+                </div>
+                <p id="puzzle-id-display" class="flicker-subtle" style="font-size: 14px; text-align: right; margin-top: 5px;"></p>
+            </div>
+
+            <div class="form-group" style="margin-top:20px;">
+                <h2>3. Submit Answer</h2>
+                <div style="margin-bottom: 15px; margin-top:10px;">
+                    <label for="player-id-input">> Player ID (for testing):</label>
+                    <input type="number" id="player-id-input" value="1" placeholder="Enter numeric player ID">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label for="answer-input">> Your Answer:</label>
+                    <textarea id="answer-input" rows="15" placeholder="Enter your answer (e.g., 'A', code snippet, explanation...)" disabled></textarea>
+                </div>
+                <button id="validate-btn" class="submit-button" style="width: 100%;" disabled>> Validate Answer_</button>
+            </div>
+
+            <div class="riddle-section" style="margin-top:20px;">
+                <h2>4. Result</h2>
+                <div id="result-display" class="display-area">
+                    <p class="flicker-subtle">:: Submit an answer to see the result ::</p>
+                </div>
+                <div id="hint-display-themed">
+                    <span class="hint-title">Hint:</span>
+                    <p id="hint-text-content" style="font-size: 16px;"></p>
+                </div>
+            </div>
+
+            <div id="status-display" class="feedback neutral status-message-area" style="margin-top: 20px;"></div>
+        </main>
+
+        <footer>
+            <p class="flicker">:: API Tester Interface :: System Nominal ::</p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+
+    <script>
+        // DOM Elements
+        const createUsernameInput = document.getElementById('create-username-input');
+        const createPlayerBtn = document.getElementById('create-player-btn');
+        const createPlayerStatus = document.getElementById('create-player-status');
+        const generateBtn = document.getElementById('generate-btn');
+        const validateBtn = document.getElementById('validate-btn');
+        const domainSelect = document.getElementById('domain-select');
+        const difficultySelect = document.getElementById('difficulty-select');
+        const puzzleDisplayContainer = document.getElementById('puzzle-display-container');
+        const puzzleIdDisplay = document.getElementById('puzzle-id-display');
+        const playerIdInput = document.getElementById('player-id-input');
+        const answerInput = document.getElementById('answer-input');
+        const resultDisplay = document.getElementById('result-display');
+        const statusDisplay = document.getElementById('status-display');
+        const hintDisplayDiv = document.getElementById('hint-display-themed');
+        const hintTextContent = document.getElementById('hint-text-content');
+
+        // API Configuration
+        const API_BASE_URL = 'http://127.0.0.1:5000';
+        const CREATE_PLAYER_URL = `${API_BASE_URL}/players`;
+        const GENERATE_URL = `${API_BASE_URL}/generate_puzzle`;
+        const VALIDATE_URL = `${API_BASE_URL}/validate_answer`;
+        let currentPuzzleId = null;
+
+        // Helper Functions
+        function setStatus(message, type = 'neutral', targetElement = statusDisplay) {
+            targetElement.textContent = message;
+            targetElement.className = `feedback ${type} status-message-area`;
+        }
+
+        function clearStatus(targetElement = statusDisplay) {
+            targetElement.textContent = '';
+            targetElement.className = 'feedback neutral status-message-area';
+        }
+
+        function setLoadingState(button, isLoading, originalText = "Submit") {
+            if (isLoading) {
+                button.disabled = true;
+                button.innerHTML = `&gt; Processing<span class="cursor" style="height:1em; display:inline-block; vertical-align:text-bottom;"></span>`;
+            } else {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        }
+
+        async function handleCreatePlayer() {
+            const username = createUsernameInput.value.trim();
+            if (!username) { setStatus(":: Username Required ::", 'incorrect', createPlayerStatus); return; }
+            clearStatus(createPlayerStatus);
+            setLoadingState(createPlayerBtn, true, "> Create Player_");
+            try {
+                const response = await fetch(CREATE_PLAYER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username }),
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || `HTTP error ${response.status}`);
+                setStatus(`:: Player '${data.username}' (ID: ${data.player_id}) Created. Copied to Player ID field. ::`, 'correct', createPlayerStatus);
+                playerIdInput.value = data.player_id;
+            } catch (error) {
+                console.error('Error creating player:', error);
+                if (error.message.includes("already exists")) {
+                     setStatus(error.message + " Try different username or use existing ID.", 'incorrect', createPlayerStatus);
+                } else {
+                     setStatus(`:: Error Creating Player: ${error.message} ::`, 'incorrect', createPlayerStatus);
+                }
+            } finally {
+                setLoadingState(createPlayerBtn, false, "> Create Player_");
+            }
+        }
+
+        async function fetchPuzzle() {
+            clearStatus(); clearStatus(createPlayerStatus);
+            setLoadingState(generateBtn, true, "> Generate Puzzle_");
+            puzzleDisplayContainer.innerHTML = '<p class="flicker-subtle">:: Generating new AI puzzle, please stand by... ::</p>';
+            puzzleIdDisplay.textContent = '';
+            validateBtn.disabled = true; answerInput.disabled = true; answerInput.value = '';
+            resultDisplay.innerHTML = '<p class="flicker-subtle">:: Submit an answer to see the result ::</p>';
+            hintDisplayDiv.style.display = 'none';
+            try {
+                const response = await fetch(GENERATE_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ domain: domainSelect.value, difficulty: difficultySelect.value }),
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || `HTTP error ${response.status} - ${response.statusText}`);
+                puzzleDisplayContainer.innerHTML = data.puzzle_description;
+                Prism.highlightAllUnder(puzzleDisplayContainer);
+                currentPuzzleId = data.puzzle_id;
+                puzzleIdDisplay.textContent = `:: Puzzle ID: ${currentPuzzleId} ::`;
+                validateBtn.disabled = false; answerInput.disabled = false;
+            } catch (error) {
+                console.error('Error fetching puzzle:', error);
+                puzzleDisplayContainer.innerHTML = `<p class="feedback incorrect">:: Error: ${error.message} ::</p>`;
+                setStatus(`:: Generation Error: ${error.message} ::`, 'incorrect');
+                currentPuzzleId = null;
+            } finally {
+                setLoadingState(generateBtn, false, "> Generate Puzzle_");
+            }
+        }
+
+        async function submitAnswer() {
+            const userAnswer = answerInput.value;
+            const playerId = playerIdInput.value;
+            if (currentPuzzleId === null) { setStatus(':: Please generate a puzzle first ::', 'incorrect'); return; }
+            if (!userAnswer.trim()) { setStatus(':: Please enter your answer ::', 'incorrect'); answerInput.focus(); return; }
+            if (!playerId.trim() || isNaN(parseInt(playerId))) {
+                setStatus(':: Please enter a valid numeric Player ID. You can create one above. ::', 'incorrect');
+                playerIdInput.focus(); return;
+            }
+            clearStatus();
+            setLoadingState(validateBtn, true, "> Validate Answer_");
+            resultDisplay.innerHTML = '<p class="flicker-subtle">:: Validating input sequence... ::</p>';
+            hintDisplayDiv.style.display = 'none';
+            try {
+                const response = await fetch(VALIDATE_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        puzzle_id: currentPuzzleId,
+                        player_id: parseInt(playerId),
+                        user_answer: userAnswer,
+                    }),
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || `HTTP error ${response.status} - ${response.statusText}`);
+
+                // Updated HTML structure for result display
+                let resultHTML = `<div class="result-line">
+                                    <span class="result-label flicker-subtle">Result:</span>
+                                    <span class="validation-status-text ${data.correct ? 'feedback correct' : 'feedback incorrect'}">
+                                        ${data.correct ? 'Correct' : 'Incorrect'}
+                                    </span>
+                                  </div>`;
+                resultHTML += `<p class="detailed-feedback" style="margin-top: 8px;">${data.feedback || 'No specific feedback provided.'}</p>`; // Added class for feedback
+                resultDisplay.innerHTML = resultHTML;
+
+                if (data.hint) {
+                    hintTextContent.innerHTML = data.hint;
+                    hintDisplayDiv.style.display = 'block';
+                } else {
+                    hintDisplayDiv.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error validating answer:', error);
+                resultDisplay.innerHTML = `<p class="feedback incorrect">:: Error: ${error.message} ::</p>`;
+                if (error.message.toLowerCase().includes("player not found")) {
+                    setStatus(":: Validation Error: Player ID not found. Create player or use valid ID. ::", 'incorrect');
+                } else {
+                    setStatus(`:: Validation Error: ${error.message} ::`, 'incorrect');
+                }
+            } finally {
+                setLoadingState(validateBtn, false, "> Validate Answer_");
+            }
+        }
+
+        createPlayerBtn.addEventListener('click', handleCreatePlayer);
+        generateBtn.addEventListener('click', fetchPuzzle);
+        validateBtn.addEventListener('click', submitAnswer);
+        document.addEventListener('DOMContentLoaded', () => {
+            Prism.plugins.NormalizeWhitespace.setDefaults({
+                'remove-trailing': true, 'remove-indent': true,
+                'left-trim': true, 'right-trim': true,
+            });
+            clearStatus(createPlayerStatus); clearStatus(statusDisplay);
+            hintDisplayDiv.style.display = 'none';
+        });
+    </script>
+</body>
+</html>

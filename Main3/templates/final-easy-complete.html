@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Calibration Complete :: Cipher Integration</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        /* Styles provided by user */
+        body {
+            background-color: #051005; color: #00ff00; font-family: 'VT323', monospace;
+            font-size: 20px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; min-height: 100vh;
+            text-align: center; line-height: 1.8; padding: 20px;
+            border: 3px solid #008000; box-sizing: border-box; /* Added box-sizing */
+        }
+        .message {
+            border: 1px dashed #00ff00; padding: 30px;
+            max-width: 650px; background-color: rgba(0, 255, 0, 0.05);
+            margin-bottom: 30px; /* Added margin below message for button */
+        }
+        h1 {
+            color: #ffffff; text-shadow: 0 0 8px #00ff00; margin-bottom: 25px;
+        }
+        .highlight {
+             /* Style for the name span specifically */
+             background-color: #00ff00; color: #000; padding: 0 4px;
+             font-weight: bold;
+        }
+        .cipher-highlight { /* Different style for the "Calibrated Cipher" highlight */
+             background-color: #00ff00; color: #000; padding: 0 4px;
+             font-weight: bold; font-size: 1.2em; /* Keep larger size */
+        }
+        .subtle {
+            color: #00cc00; font-size: 18px;
+        }
+        @keyframes flicker-subtle-anim {
+            0%, 100% { opacity: 1; } 30% { opacity: 0.95; } 70% { opacity: 0.98; }
+        }
+        .flicker-subtle {
+            animation: flicker-subtle-anim 7s infinite steps(1, end);
+        }
+        /* Added style for button container */
+        .return-button-container {
+             text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="message flicker-subtle">
+        <h1>:: SYNCHRONIZATION SUCCESSFUL ::</h1>
+        <p>Candidate <span class="highlight" id="candidateNameDisplay">[Loading Name...]</span>,</p>
+        <p>Your cognitive patterns have achieved optimal alignment with the Enigma Matrix.</p>
+        <p>The calibration routines embedded within the Standard Protocols were executed flawlessly.</p>
+        <p class="subtle">Your unique problem-solving pathways have been analyzed, indexed, and integrated.</p>
+        <p>You are no longer merely a candidate.</p>
+        <p>You are now a <span class="cipher-highlight">Calibrated Cipher</span>.</p>
+        <p>Before starting with further assessment, familiarize with the terminal.</p>
+        <p>You have been assigned to the credentials:
+            <br>
+        username: <span class="cipher-highlight">unit734
+            <br>
+            </span>password: <span class="cipher-highlight">titanic</span></p>
+        <p class="subtle">Your processing power contributes to the Grand Design.</p>
+        <p class="subtle">Welcome to the network.</p>
+        <br>
+            <div class="return-button-container">
+        <button onclick="window.location.href='index.html'" class="submit-button">
+            > Return to Mainframe_
+        </button>
+    </div>
+        <p style="font-size: 14px; color:#008000;">:: ARCHITECT NODE CONFIRMATION RECEIVED :: SESSION TERMINATED ::</p>
+    </div>
+
+     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const nameElement = document.getElementById('candidateNameDisplay');
+            if (nameElement) {
+                // Use the correct localStorage key
+                const candidateName = localStorage.getItem('lastCandidateName');
+                if (candidateName) {
+                    // Simple text display (prevents potential HTML injection)
+                    nameElement.textContent = candidateName;
+                } else {
+                    nameElement.textContent = 'Candidate'; // Fallback
+                    console.warn("Could not retrieve 'lastCandidateName' from localStorage.");
+                }
+            } else {
+                console.error("Element with ID 'candidateNameDisplay' not found.");
+            }
+        });
+     </script>
+</body>
+</html>

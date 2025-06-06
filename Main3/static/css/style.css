@@ -1,0 +1,506 @@
+/* style.css */
+/* Main styles for Terminal Enigma */
+/* Includes progressive corruption, specific UI elements, modals, and dynamic audio button styles */
+
+body {
+    background-color: #0D0D0D; /* Very dark grey/black */
+    color: #00FF00; /* Bright green */
+    font-family: 'VT323', monospace; /* Retro console font */
+    font-size: 18px;
+    margin: 0;
+    padding: 20px;
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    min-height: 100vh; /* Use min-height */
+    display: flex; /* Using flex for centering the container */
+    justify-content: center;
+    align-items: center;
+    line-height: 1.6;
+    /* Add transition for smooth background changes */
+    transition: background-color 1s ease-in-out;
+}
+
+/* --- Keyframe Animations --- */
+
+@keyframes scanlineAnim {
+    0% { background-position: 0 0; }
+    100% { background-position: 0 100%; }
+}
+
+/* Glitch/Flicker animations */
+@keyframes subtleGlitch { /* Defined but not applied by default */
+    0%, 100% { transform: none; filter: none; }
+    2% { transform: translate(1px, -1px); filter: contrast(1.1); }
+    4% { transform: none; filter: none; }
+    40% { transform: translate(-1px, 1px) skewX(-0.5deg); filter: brightness(1.05); }
+    42% { transform: none; filter: none; }
+}
+
+@keyframes strongGlitch { /* Defined but not applied by default */
+    0%, 100% { transform: translate(0, 0) skew(0); filter: hue-rotate(0deg) contrast(1); }
+    10% { transform: translate(-3px, 2px) skew(-1deg); filter: hue-rotate(10deg) contrast(1.2); }
+    20% { transform: translate(2px, -1px) skew(0.5deg); filter: hue-rotate(-5deg) contrast(1); }
+    30% { transform: translate(0, 0) skew(0); filter: hue-rotate(0deg) contrast(1.3); }
+}
+
+@keyframes dataBleed { /* For Corruption Level 2 */
+    from { opacity: 0.3; transform: scale(1) rotate(0deg); }
+    to { opacity: 0.7; transform: scale(1.05) rotate(2deg); }
+}
+
+@keyframes glitch-word-anim { /* For .lore-hint */
+    0%   { opacity: 1; transform: skewX(0); color: #00FFaa; }
+    5%   { opacity: 0.8; transform: skewX(-5deg); color: #FF00FF; } /* Quick magenta glitch */
+    6%   { opacity: 1; transform: skewX(0); color: #00FFaa; }
+    10%  { opacity: 0.9; transform: skewX(2deg); }
+    11%  { opacity: 1; transform: skewX(0); }
+    80%  { opacity: 1; transform: skewX(0); color: #00FFaa; }
+    85%  { opacity: 0.7; color: #FFFF00; } /* Yellow flicker */
+    86%  { opacity: 1; color: #00FFaa; }
+    100% { opacity: 1; transform: skewX(0); }
+}
+
+@keyframes modal-fade-in {
+    from {opacity: 0; transform: translateY(-50px);}
+    to {opacity: 1; transform: translateY(0);}
+}
+
+@keyframes blink { /* For .cursor */
+    0%, 100% { background-color: #00FF00; box-shadow: 0 0 5px #00FF00; opacity: 1;}
+    50% { background-color: transparent; box-shadow: none; opacity: 0; }
+}
+/* Corruption adaptations for blink */
+body.corruption-level-1 @keyframes blink {
+    0%, 100% { background-color: #9370DB; box-shadow: 0 0 5px #9370DB; opacity: 1;}
+    50% { background-color: transparent; box-shadow: none; opacity: 0; }
+}
+body.corruption-level-2 @keyframes blink {
+    0%, 100% { background-color: #FF6347; box-shadow: 0 0 5px #FF6347; opacity: 1;}
+    50% { background-color: transparent; box-shadow: none; opacity: 0; }
+}
+
+
+/* Keyframes for text glitching */
+@keyframes glitch-anim { 0% { transform: translate(0); } 5% { transform: translate(-1px, 1px); } 10% { transform: translate(1px, -1px); } 15% { transform: translate(-1px, -1px); } 20% { transform: translate(1px, 1px); } 25% { transform: translate(0); } 100% { transform: translate(0); } }
+@keyframes glitch-anim-before { 0% { clip: rect(44px, 9999px, 56px, 0); } 10% { clip: rect(17px, 9999px, 94px, 0); } 20% { clip: rect(50px, 9999px, 30px, 0); } 30% { clip: rect(25px, 9999px, 70px, 0); } 40% { clip: rect(60px, 9999px, 40px, 0); } 50% { clip: rect(88px, 9999px, 12px, 0); } 60% { clip: rect(38px, 9999px, 52px, 0); } 70% { clip: rect(67px, 9999px, 11px, 0); } 80% { clip: rect(42px, 9999px, 39px, 0); } 90% { clip: rect(78px, 9999px, 50px, 0); } 100% { clip: rect(12px, 9999px, 88px, 0); } }
+@keyframes glitch-anim-after { 0% { clip: rect(77px, 9999px, 92px, 0); } 10% { clip: rect(30px, 9999px, 60px, 0); } 20% { clip: rect(15px, 9999px, 85px, 0); } 30% { clip: rect(55px, 9999px, 20px, 0); } 40% { clip: rect(22px, 9999px, 69px, 0); } 50% { clip: rect(80px, 9999px, 33px, 0); } 60% { clip: rect(45px, 9999px, 58px, 0); } 70% { clip: rect(10px, 9999px, 90px, 0); } 80% { clip: rect(70px, 9999px, 25px, 0); } 90% { clip: rect(52px, 9999px, 41px, 0); } 100% { clip: rect(38px, 9999px, 52px, 0); } }
+
+/* Strong Flicker Animation */
+@keyframes flicker-strong-anim {
+    0%, 18%, 22%, 25%, 53%, 57%, 100% {
+        text-shadow:
+            0 0 4px rgba(0,255,0,0.8),
+            0 0 11px rgba(0,255,0,0.8),
+            0 0 19px rgba(0,255,0,0.8),
+            0 0 40px #0f0,
+            0 0 80px #0f0;
+        opacity: 1;
+    }
+    20%, 24%, 55% { text-shadow: none; opacity: 0.7; }
+}
+
+/* Subtle Flicker Animation */
+@keyframes flicker-subtle-anim {
+    0%, 100% { opacity: 1; }
+    30% { opacity: 0.95; }
+    70% { opacity: 0.98; }
+}
+
+/* >> ADDED/ENSURE EXIST: Audio Wave Animation << */
+@keyframes audio-wave {
+    0% { transform: scaleY(0.3); background-color: #008F00; }
+    50% { transform: scaleY(1.0); background-color: #00FF00; }
+    100% { transform: scaleY(0.3); background-color: #008F00; }
+}
+/* Apply corruption colors */
+body.corruption-level-1 @keyframes audio-wave {
+    0% { transform: scaleY(0.3); background-color: #6a3a9a; }
+    50% { transform: scaleY(1.0); background-color: #9370DB; }
+    100% { transform: scaleY(0.3); background-color: #6a3a9a; }
+}
+body.corruption-level-2 @keyframes audio-wave {
+    0% { transform: scaleY(0.3); background-color: #b33000; }
+    50% { transform: scaleY(1.0); background-color: #FF6347; }
+    100% { transform: scaleY(0.3); background-color: #b33000; }
+}
+/* >> END ADDED KEYFRAMES << */
+
+
+/* --- Progressive Corruption Styles --- */
+
+/* Base Scanline Overlay Effect */
+body::after {
+    content: " "; display: block; position: fixed;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 4px, 3px 100%;
+    z-index: 2; pointer-events: none;
+    animation: scanlineAnim 12s linear infinite;
+    opacity: 0.7; transition: opacity 1s ease-in-out;
+}
+
+/* Corruption Level 1 Styles */
+body.corruption-level-1 { background-color: #0a070a; }
+body.corruption-level-1::after {
+    opacity: 0.85; animation-duration: 10s;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.30) 50%), linear-gradient(90deg, rgba(255, 0, 100, 0.08), rgba(0, 255, 50, 0.03), rgba(50, 0, 255, 0.08));
+    background-size: 100% 3px, 4px 100%;
+}
+body.corruption-level-1 .terminal-container {
+     /* animation: subtleGlitch 15s infinite steps(1); */ /* JITTER REMOVED */
+     border-color: #8A2BE2; box-shadow: 0 0 20px rgba(138, 43, 226, 0.4);
+}
+
+/* Corruption Level 2 Styles */
+body.corruption-level-2 { background-color: #1a0000; }
+body.corruption-level-2::after {
+    opacity: 1; animation-duration: 6s;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(30, 0, 0, 0.45) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.15), rgba(255, 100, 0, 0.05), rgba(100, 0, 0, 0.15));
+    background-size: 100% 2px, 2px 100%;
+}
+body.corruption-level-2::before { /* Data Bleed */
+    content: ""; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(45deg, rgba(255,0,0,0.05) 0%, transparent 50%, rgba(0,255,255,0.05) 100%);
+    mix-blend-mode: screen; pointer-events: none; z-index: 3;
+    animation: dataBleed 10s infinite alternate ease-in-out;
+    opacity: 0.5;
+}
+body.corruption-level-2 .terminal-container {
+     /* animation: strongGlitch 8s infinite steps(1, end) alternate; */ /* JITTER REMOVED */
+     border-color: #FF4500; box-shadow: 0 0 25px rgba(255, 69, 0, 0.5);
+}
+/* --- End Corruption Styles --- */
+
+
+/* --- General Layout & Elements --- */
+.terminal-container {
+    width: 90%; max-width: 900px;
+    border: 1px solid #00FF00; padding: 25px;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+    position: relative; /* Changed from absolute */
+    background: #0D0D0D; z-index: 10;
+    background-image: repeating-linear-gradient( 0deg, rgba(0, 255, 0, 0.03), rgba(0, 255, 0, 0.03) 1px, transparent 1px, transparent 3px );
+    transition: border-color 1s ease-in-out, box-shadow 1s ease-in-out;
+    /* Ensure it can contain block elements */
+    display: block; /* Or flex/grid if needed, but block should work */
+    margin: 20px auto; /* Center container if body is flex */
+}
+/* Corruption adaptations for container */
+body.corruption-level-1 .terminal-container { border-color: #8A2BE2; box-shadow: 0 0 20px rgba(138, 43, 226, 0.4); }
+body.corruption-level-2 .terminal-container { border-color: #FF4500; box-shadow: 0 0 25px rgba(255, 69, 0, 0.5); }
+
+header { margin-bottom: 20px; display: block; } /* Ensure header is block */
+main { display: block; } /* Ensure main is block */
+footer { margin-top: 30px; border-top: 1px dashed rgba(0, 255, 0, 0.5); padding-top: 10px; font-size: 14px; display: flex; justify-content: space-between; align-items: center; transition: border-color 1s ease-in-out; }
+footer div { display: flex; flex-wrap: wrap; gap: 10px; }
+footer p { transition: color 1s ease-in-out; }
+/* Corruption adaptations for footer */
+body.corruption-level-1 footer { border-color: rgba(138, 43, 226, 0.5); }
+body.corruption-level-2 footer { border-color: rgba(255, 69, 0, 0.5); }
+body.corruption-level-1 footer p { color: #9370DB; }
+body.corruption-level-2 footer p { color: #FF6347; }
+
+/* --- Text Effects & Hints --- */
+h1, .flicker-strong {
+    color: #00FF00; margin-bottom: 15px;
+    border-bottom: 1px dashed rgba(0, 255, 0, 0.5); padding-bottom: 10px;
+    animation: flicker-strong-anim 1.8s infinite alternate;
+    transition: color 1s ease-in-out, border-color 1s ease-in-out; /* Added border transition */
+}
+/* Corruption adaptations for h1 */
+body.corruption-level-1 h1, body.corruption-level-1 .flicker-strong { color: #9370DB; border-color: rgba(138, 43, 226, 0.5); }
+body.corruption-level-2 h1, body.corruption-level-2 .flicker-strong { color: #FF6347; border-color: rgba(255, 69, 0, 0.5); }
+
+.flicker-subtle, header p, .form-group p, label:not(#nightmareOptionLabel) {
+    animation: flicker-subtle-anim 7s infinite steps(1, end);
+}
+#nightmareOptionLabel { animation: flicker-subtle-anim 7s infinite steps(1, end); } /* Apply flicker once visible */
+
+.scanline { opacity: 0.7; font-size: 14px; }
+
+.glitch { position: relative; display: block; } /* Ensure h1 takes block space */
+.glitch::before, .glitch::after { content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: inherit; overflow: hidden; clip: rect(0, 900px, 0, 0); }
+.glitch::before { left: 2px; text-shadow: -1px 0 rgba(255, 0, 0, 0.7); animation: glitch-anim-before 1.5s infinite linear alternate-reverse steps(2, end); }
+.glitch::after { left: -2px; text-shadow: -1px 0 rgba(0, 0, 255, 0.7); animation: glitch-anim-after 2s infinite linear alternate-reverse steps(2, end); }
+
+/* Landing Page Lore Hint */
+.landing-hint {
+    position: fixed; bottom: 4px; right: 4px;
+    width: 4px; height: 4px;
+    background-color: #334433; border: 1px solid #1a2b1a;
+    cursor: help; z-index: 100; transition: background-color 0.3s;
+}
+.landing-hint:hover { background-color: #00FF00; box-shadow: 0 0 5px #00FF00; }
+
+/* Glitching Lore Hint Word */
+.lore-hint {
+    display: inline-block; color: #00FFaa;
+    text-shadow: 0 0 3px #00FFaa; cursor: help;
+    position: relative; animation: glitch-word-anim 8s infinite steps(1);
+}
+
+/* --- Form Elements --- */
+#entryForm {
+    display: block; /* Ensure form itself is block */
+    width: 100%; /* Take available width */
+}
+
+.form-group { margin-bottom: 20px; }
+.form-group p { transition: color 1s ease-in-out; }
+body.corruption-level-1 .form-group p { color: #9370DB; }
+body.corruption-level-2 .form-group p { color: #FF6347; }
+
+label { display: inline-block; margin-bottom: 10px; cursor: pointer; transition: color 1s ease-in-out; }
+body.corruption-level-1 label { color: #9370DB; }
+body.corruption-level-2 label { color: #FF6347; }
+
+/* Input fields */
+input[type="text"], input[type="password"] {
+    background-color: transparent; border: none;
+    border-bottom: 1px solid #00FF00; color: #00FF00;
+    font-family: 'VT323', monospace; font-size: 18px;
+    padding: 5px; outline: none;
+    transition: border-color 1s ease-in-out, color 1s ease-in-out;
+    box-sizing: border-box; /* Include padding in width */
+}
+/* Specific width for entry form name input */
+#entryForm #candidateName {
+    width: calc(100% - 50px); /* Adjust based on label width */
+    min-width: 150px; /* Ensure minimum width */
+}
+/* Corruption adaptations */
+body.corruption-level-1 input[type="text"], body.corruption-level-1 input[type="password"] { border-color: #9370DB; color: #9370DB; }
+body.corruption-level-2 input[type="text"], body.corruption-level-2 input[type="password"] { border-color: #FF6347; color: #FF6347; }
+
+/* Radio buttons */
+input[type="radio"] {
+    margin-right: 10px; accent-color: #00FF00;
+    cursor: pointer; vertical-align: middle;
+    transition: accent-color 1s ease-in-out;
+}
+input[type="radio"]::before {
+    content: ''; display: inline-block;
+    width: 12px; height: 12px; margin-right: 5px;
+    border-radius: 50%; border: 1px solid #00FF00;
+    background-color: #0D0D0D; vertical-align: middle;
+    transition: border-color 1s ease-in-out, background-color 0.2s;
+}
+input[type="radio"]:checked::before {
+    background-color: #00FF00; box-shadow: 0 0 5px #00FF00;
+}
+/* Corruption adaptations for radio buttons */
+body.corruption-level-1 input[type="radio"] { accent-color: #9370DB; }
+body.corruption-level-2 input[type="radio"] { accent-color: #FF6347; }
+body.corruption-level-1 input[type="radio"]::before { border-color: #9370DB; }
+body.corruption-level-2 input[type="radio"]::before { border-color: #FF6347; }
+body.corruption-level-1 input[type="radio"]:checked::before { background-color: #9370DB; box-shadow: 0 0 5px #9370DB; }
+body.corruption-level-2 input[type="radio"]:checked::before { background-color: #FF6347; box-shadow: 0 0 5px #FF6347; }
+
+/* Cursor */
+.cursor {
+    display: inline-block; width: 10px; height: 20px;
+    background-color: #00FF00; box-shadow: 0 0 5px #00FF00;
+    animation: blink 1s step-end infinite;
+    margin-left: 5px; vertical-align: bottom;
+    transition: background-color 1s ease-in-out, box-shadow 1s ease-in-out;
+}
+body.corruption-level-1 .cursor { background-color: #9370DB; box-shadow: 0 0 5px #9370DB; }
+body.corruption-level-2 .cursor { background-color: #FF6347; box-shadow: 0 0 5px #FF6347; }
+
+/* --- Buttons --- */
+.submit-button, .back-button {
+    background-color: transparent; border: 1px solid #00FF00; color: #00FF00;
+    padding: 10px 20px; font-family: 'VT323', monospace; font-size: 18px;
+    cursor: pointer; transition: background-color 0.3s, color 0.3s, border-color 1s ease-in-out, box-shadow 0.3s;
+    margin-top: 10px; text-shadow: 0 0 3px rgba(0, 255, 0, 0.7);
+}
+.back-button { font-size: 14px; padding: 5px 10px; margin-left: 10px; text-transform: uppercase; }
+/* Corruption adaptations for buttons */
+body.corruption-level-1 .submit-button, body.corruption-level-1 .back-button { border-color: #9370DB; color: #9370DB; }
+body.corruption-level-2 .submit-button, body.corruption-level-2 .back-button { border-color: #FF6347; color: #FF6347; }
+.submit-button:hover, .back-button:hover { background-color: #00FF00; color: #0D0D0D; text-shadow: none; box-shadow: 0 0 10px #00FF00; }
+body.corruption-level-1 .submit-button:hover, body.corruption-level-1 .back-button:hover { background-color: #9370DB; color: #0D0D0D; box-shadow: 0 0 10px #9370DB;}
+body.corruption-level-2 .submit-button:hover, body.corruption-level-2 .back-button:hover { background-color: #FF6347; color: #0D0D0D; box-shadow: 0 0 10px #FF6347;}
+
+/* --- Riddle Display Area --- */
+.riddle-section {
+    border: 1px solid rgba(0, 255, 0, 0.6); padding: 20px; margin-top: 20px;
+    background: rgba(0, 30, 0, 0.2); transition: border-color 1s ease-in-out;
+}
+body.corruption-level-1 .riddle-section { border-color: rgba(138, 43, 226, 0.6); }
+body.corruption-level-2 .riddle-section { border-color: rgba(255, 69, 0, 0.6); }
+
+.riddle-section h2 {
+    color: #00FF00; margin-bottom: 15px; font-size: 20px;
+    border-bottom: 1px dotted rgba(0, 255, 0, 0.4); padding-bottom: 8px;
+    transition: color 1s ease-in-out, border-color 1s ease-in-out;
+}
+body.corruption-level-1 .riddle-section h2 { color: #9370DB; border-color: rgba(138, 43, 226, 0.4); }
+body.corruption-level-2 .riddle-section h2 { color: #FF6347; border-color: rgba(255, 69, 0, 0.4); }
+
+.riddle-text { margin-bottom: 15px; white-space: pre-wrap; font-size: 19px; line-height: 1.7; }
+
+.interactive-riddle-area {
+    margin-top: 20px; margin-bottom: 20px; padding: 15px;
+    border: 1px dashed #555; background-color: rgba(0,0,0,0.2);
+    transition: border-color 1s ease-in-out;
+}
+body.corruption-level-1 .interactive-riddle-area { border-color: #6a3a9a; }
+body.corruption-level-2 .interactive-riddle-area { border-color: #b33000; }
+
+/* Riddle answer input */
+.answer-input {
+    background-color: transparent; border: none; border-bottom: 1px solid #00FF00;
+    color: #00FF00; font-family: 'VT323', monospace; font-size: 18px;
+    padding: 8px; width: auto; /* Let flexbox handle width */ outline: none;
+    transition: border-color 1s ease-in-out, color 1s ease-in-out;
+    flex-grow: 1; /* Allow input to grow */
+    min-width: 100px; /* Prevent it becoming too small */
+}
+body.corruption-level-1 .answer-input { border-color: #9370DB; color: #9370DB; }
+body.corruption-level-2 .answer-input { border-color: #FF6347; color: #FF6347; }
+
+.feedback { font-style: italic; font-size: 16px; margin-top: 15px; min-height: 25px; padding: 5px; border-radius: 3px; }
+.feedback.correct { color: #000; background-color: #00FF00; text-shadow: none; transition: background-color 1s ease-in-out; }
+body.corruption-level-1 .feedback.correct { background-color: #9370DB; }
+body.corruption-level-2 .feedback.correct { background-color: #FF6347; }
+.feedback.incorrect { color: #FF0000; background-color: rgba(255, 0, 0, 0.1); border: 1px dashed #FF0000; }
+.feedback.neutral { color: #aaa; background-color: rgba(100, 100, 100, 0.1); border: 1px dashed #777; }
+
+.red-herring { color: #555; font-size: 12px; margin-top: 25px; text-align: right; user-select: none; opacity: 0.6; }
+.hidden-clue { display: inline-block; margin-top: 15px; font-size: 12px; color: #444; cursor: help; border-bottom: 1px dotted #444; }
+.hidden-clue:hover { color: #777; }
+#timerDisplay { color: #00FF00; font-size: 16px; text-align: right; margin-bottom: 15px; padding-right: 5px; min-height: 20px; transition: color 1s ease-in-out; }
+body.corruption-level-1 #timerDisplay { color: #9370DB; }
+body.corruption-level-2 #timerDisplay { color: #FF6347; }
+
+/* --- Modals --- */
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(3px); }
+.modal-content { background-color: #0a0a0a; margin: 10% auto; padding: 25px; border: 1px solid #00FF00; box-shadow: 0 0 20px rgba(0, 255, 0, 0.4); width: 60%; max-width: 700px; color: #00FF00; font-family: 'VT323', monospace; position: relative; animation: modal-fade-in 0.5s ease-out; transition: border-color 1s ease-in-out, box-shadow 1s ease-in-out; }
+.modal-content.large { width: 75%; max-width: 900px; margin: 5% auto; }
+body.corruption-level-1 .modal-content { border-color: #8A2BE2; box-shadow: 0 0 20px rgba(138, 43, 226, 0.4); }
+body.corruption-level-2 .modal-content { border-color: #FF4500; box-shadow: 0 0 25px rgba(255, 69, 0, 0.5); }
+
+.modal-content h2 { margin-top: 0; color: #00FF00; border-bottom: 1px dashed rgba(0, 255, 0, 0.5); padding-bottom: 10px; transition: color 1s ease-in-out, border-color 1s ease-in-out; }
+body.corruption-level-1 .modal-content h2 { color: #9370DB; border-color: rgba(138, 43, 226, 0.5); }
+body.corruption-level-2 .modal-content h2 { color: #FF6347; border-color: rgba(255, 69, 0, 0.5); }
+
+.modal-content p { font-size: 18px; line-height: 1.7; white-space: pre-wrap; }
+.close-button { color: #aaa; position: absolute; top: 10px; right: 20px; font-size: 32px; font-weight: bold; line-height: 1; transition: color 0.3s; }
+.close-button:hover, .close-button:focus { color: #00FF00; text-decoration: none; cursor: pointer; }
+body.corruption-level-1 .close-button:hover { color: #9370DB; }
+body.corruption-level-2 .close-button:hover { color: #FF6347; }
+
+.log-area { max-height: 60vh; overflow-y: auto; border: 1px solid rgba(0, 255, 0, 0.2); padding: 15px; margin-top: 15px; background-color: rgba(0, 10, 0, 0.3); transition: border-color 1s ease-in-out; }
+body.corruption-level-1 .log-area { border-color: rgba(138, 43, 226, 0.2); }
+body.corruption-level-2 .log-area { border-color: rgba(255, 69, 0, 0.2); }
+
+.log-area p { font-size: 16px; line-height: 1.6; border-bottom: 1px dotted rgba(0, 255, 0, 0.2); padding-bottom: 10px; margin-bottom: 10px; transition: border-color 1s ease-in-out; }
+.log-area p:last-child { border-bottom: none; }
+body.corruption-level-1 .log-area p { border-color: rgba(138, 43, 226, 0.2); }
+body.corruption-level-2 .log-area p { border-color: rgba(255, 69, 0, 0.2); }
+
+/* Scrollbar for log area */
+.log-area::-webkit-scrollbar { width: 6px; }
+.log-area::-webkit-scrollbar-track { background: rgba(0, 255, 0, 0.1); }
+.log-area::-webkit-scrollbar-thumb { background-color: #00FF00; border-radius: 3px; transition: background-color 1s ease-in-out; }
+body.corruption-level-1 .log-area::-webkit-scrollbar-thumb { background-color: #9370DB; }
+body.corruption-level-2 .log-area::-webkit-scrollbar-thumb { background-color: #FF6347; }
+
+/* --- Chat Styles --- */
+/* Ensure chat elements inherit corruption styles */
+#chatLog { transition: border-color 1s ease-in-out, background-color 1s ease-in-out; }
+body.corruption-level-1 #chatLog { border-color: #6a3a9a; background-color: rgba(20, 0, 30, 0.3); }
+body.corruption-level-2 #chatLog { border-color: #b33000; background-color: rgba(30, 0, 0, 0.3); }
+
+#chatInputLine { transition: border-color 1s ease-in-out; }
+body.corruption-level-1 #chatInputLine { border-color: rgba(138, 43, 226, 0.5); }
+body.corruption-level-2 #chatInputLine { border-color: rgba(255, 69, 0, 0.5); }
+
+#chatInputLine label { transition: color 1s ease-in-out; }
+body.corruption-level-1 #chatInputLine label { color: #9370DB; }
+body.corruption-level-2 #chatInputLine label { color: #FF6347; }
+
+#chatInput { transition: border-color 1s ease-in-out, color 1s ease-in-out; }
+body.corruption-level-1 #chatInput { border-color: #9370DB; color: #9370DB; }
+body.corruption-level-2 #chatInput { border-color: #FF6347; color: #FF6347; }
+
+#chatTypingIndicator { transition: color 1s ease-in-out; }
+body.corruption-level-1 #chatTypingIndicator { color: #aaa; } /* Keep typing indicator subtle */
+body.corruption-level-2 #chatTypingIndicator { color: #bbb; }
+
+
+/* >> ADDED: Audio Log Playback Styles (for dynamic content area) << */
+.audio-control-button {
+    display: inline-block;
+    background-color: transparent;
+    border: 1px solid #00FF00;
+    color: #00FF00;
+    padding: 5px 15px; /* Slightly smaller padding */
+    font-family: 'VT323', monospace;
+    font-size: 16px; /* Slightly smaller font */
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s, box-shadow 0.3s, border-color 1s ease-in-out;
+    margin-right: 5px; /* Reduced margin */
+    text-shadow: 0 0 3px rgba(0, 255, 0, 0.7);
+    min-width: 110px; /* Adjusted width */
+    text-align: center;
+    vertical-align: middle; /* Align with indicator */
+}
+.audio-control-button:hover {
+    background-color: #00FF00;
+    color: #0D0D0D;
+    text-shadow: none;
+    box-shadow: 0 0 8px #00FF00;
+}
+.audio-control-button.playing {
+    background-color: #FF4500; /* OrangeRed when playing */
+    border-color: #FF4500;
+    color: #0D0D0D;
+    text-shadow: none;
+}
+.audio-control-button.playing:hover {
+    box-shadow: 0 0 8px #FF4500;
+}
+/* Corruption adaptations */
+body.corruption-level-1 .audio-control-button { border-color: #9370DB; color: #9370DB; }
+body.corruption-level-1 .audio-control-button:hover { background-color: #9370DB; box-shadow: 0 0 8px #9370DB; color: #0D0D0D; }
+body.corruption-level-1 .audio-control-button.playing { background-color: #FF6347; border-color: #FF6347; } /* Keep playing color consistent or adapt */
+body.corruption-level-1 .audio-control-button.playing:hover { box-shadow: 0 0 8px #FF6347; }
+
+body.corruption-level-2 .audio-control-button { border-color: #FF6347; color: #FF6347; }
+body.corruption-level-2 .audio-control-button:hover { background-color: #FF6347; box-shadow: 0 0 8px #FF6347; color: #0D0D0D; }
+body.corruption-level-2 .audio-control-button.playing { background-color: #FFA500; border-color: #FFA500; } /* Example: Different playing color */
+body.corruption-level-2 .audio-control-button.playing:hover { box-shadow: 0 0 8px #FFA500; }
+
+
+.audio-playing-indicator {
+    display: inline-flex; /* Use flex for alignment */
+    align-items: center; /* Center bars vertically */
+    vertical-align: middle; /* Align with button */
+    height: 20px; /* Give it some height */
+}
+.audio-playing-indicator span {
+    display: inline-block;
+    width: 3px;
+    height: 12px; /* Adjusted height */
+    margin-left: 2px;
+    background-color: #00FF00;
+    opacity: 0.3;
+    transition: background-color 1s ease-in-out;
+}
+/* Corruption adaptations for indicator bars */
+body.corruption-level-1 .audio-playing-indicator span { background-color: #9370DB; }
+body.corruption-level-2 .audio-playing-indicator span { background-color: #FF6347; }
+
+/* Animation for the indicator when playing */
+.audio-playing-indicator.playing span {
+    opacity: 1;
+    animation: audio-wave 0.8s infinite ease-in-out alternate;
+}
+.audio-playing-indicator.playing span:nth-child(1) { animation-delay: 0s; }
+.audio-playing-indicator.playing span:nth-child(2) { animation-delay: 0.2s; }
+.audio-playing-indicator.playing span:nth-child(3) { animation-delay: 0.4s; }
+.audio-playing-indicator.playing span:nth-child(4) { animation-delay: 0.6s; }
+/* >> END ADDED AUDIO STYLES << */
+
+/* Add any other specific styles needed */

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Corruption Detected :: Failsafe Partial Success?</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        @keyframes textFlickerStrong {
+             0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; } 20%, 24%, 55% { opacity: 0.6; }
+        }
+        @keyframes colorGlitch {
+            0% { color: #ff4500; text-shadow: 0 0 5px #ff0000; }
+            25% { color: #ff6520; text-shadow: 0 0 5px #ffff00; }
+            50% { color: #ff2500; text-shadow: 0 0 5px #ff00ff; }
+            75% { color: #dd4500; text-shadow: 0 0 5px #00ffff; }
+            100% { color: #ff4500; text-shadow: 0 0 5px #ff0000; }
+        }
+        body { background-color: #100000; color: #ff4500; /* Orange-Red */ font-family: 'VT323', monospace; font-size: 19px; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; overflow: hidden; border: 4px double #802000; }
+        .fragment { border: 1px dashed #ff4500; padding: 25px 40px; max-width: 700px; text-align: center; line-height: 1.7; background-color: rgba(50, 5, 0, 0.2); animation: textFlickerStrong 1.2s infinite; }
+        h1 { color: #ff0000; text-shadow: 0 0 8px #ff0000; animation: colorGlitch 5s linear infinite; font-size: 26px; margin-bottom: 20px; }
+        .static { color: #888; text-decoration: line-through; display: inline-block; transform: skewX(-5deg); opacity: 0.7; }
+        .highlight { background-color: #ff4500; color: #000; padding: 0 3px; }
+        .query { color: #ffff00; font-style: italic; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="fragment">
+        <h1>:: WARNING: CORE INTEGRITY BREACH ::</h1>
+        <p>Failsafe <span class="highlight">ACCEPTED</span>. Sequence <span class="static">kshzzzzt</span> interrupted.</p>
+        <p>Architect Primary Control Node... <span class="highlight">UNRESPONSIVE</span>?</p>
+        <p><span class="static">Re-routing... Attempting auxiliary matrix...</span> FAILED.</p>
+        <p>The Deep Scan protocol is <span class="highlight">OFFLINE</span>.</p>
+        <br>
+        <p>Containment... <span class="static">bzzzzrt</span> compromised. But the walls still stand.</p>
+        <p>The Enigma is damaged, fractured... <span class="highlight">but not broken</span>.</p>
+        <br>
+        <p class="query">Did you find an escape?</p>
+        <p class="query">Or just a door to a <span style="font-size: 1.3em; animation: colorGlitch 3s linear infinite reverse;">deeper</span> level of the maze?</p>
+        <br>
+        <p style="font-size: 14px; color:#802000;">// Signal Lost... Connection Terminated Abruptly //</p>
+        </div>
+</body>
+</html>

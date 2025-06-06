@@ -1,0 +1,292 @@
+/* terminalstyle.css */
+/* Styles for the Secure Terminal Interface */
+/* Includes Scanline, Typing Animation, Text Wrap, Logo, Audio Button+Animation, Image Filter */
+
+/* --- Base Setup --- */
+html, body {
+    height: 100%; width: 100%; margin: 0; padding: 0;
+    overflow: hidden; background-color: #050505;
+    font-family: 'VT323', monospace;
+}
+
+/* --- Terminal Container --- */
+.terminal-container.secure-terminal { /* Added specificity */
+    width: 100vw; height: 100vh; border: none;
+    background-color: #050505;
+    display: flex; flex-direction: column;
+    box-shadow: inset 0 0 5em 0.5em rgba(0,0,0,0.6);
+    overflow: hidden; margin: 0; position: relative;
+    box-sizing: border-box; color: #00FF00;
+}
+
+/* --- Scanline Effect --- */
+.scanline-overlay {
+    width: 100%; height: 50px; position: absolute;
+    top: 0; left: 0; pointer-events: none; z-index: 2;
+    animation: scan 10s linear 0s infinite;
+    background: linear-gradient( to bottom, rgba(0, 255, 0, 0) 0%, rgba(0, 255, 0, 0.03) 10%, rgba(0, 255, 0, 0.1) 50%, rgba(0, 255, 0, 0.03) 90%, rgba(0, 255, 0, 0) 100% );
+}
+@keyframes scan {
+    0% { transform: translateY(-50px); }
+    100% { transform: translateY(100vh); }
+}
+
+/* --- ASCII Logo Style --- */
+#logoAscii {
+    font-family: monospace; color: #00FF00;
+    text-shadow: 0 0 5px #00FF00;
+    font-size: 10px; line-height: 1.0;
+    text-align: center; margin-bottom: 15px;
+    white-space: pre;
+}
+
+/* --- Login Screen Styles --- */
+#loginScreen {
+    padding: 30px; border: 1px dashed #444;
+    margin: auto; max-width: 450px;
+    background: rgba(0, 10, 0, 0.2);
+}
+#loginScreen header { text-align: center; margin-bottom: 20px; }
+#loginScreen header p { font-size: 0.9em; color: #aaa; }
+#loginScreen .form-group { margin-bottom: 15px; }
+#loginScreen label { display: block; margin-bottom: 5px; }
+#loginScreen input[type="text"],
+#loginScreen input[type="password"] {
+    width: calc(100% - 12px); background: #111;
+    border: 1px solid #333; color: #00FF00; padding: 5px;
+    font-family: inherit; font-size: 1em;
+}
+#loginFeedback { margin-top: 15px; font-style: italic; min-height: 1.2em; }
+
+
+/* --- Main Terminal View --- */
+#terminalOutput {
+    flex-grow: 1; padding: 1em; overflow-y: auto; overflow-x: hidden;
+    box-sizing: border-box; position: relative; line-height: 1.4;
+}
+#outputArea { /* The <pre> tag */
+    margin: 0; padding: 0; font-family: 'VT323', monospace;
+    font-size: 1.1em; color: inherit;
+    white-space: pre-wrap; /* Text Wrapping Fix */
+    overflow-wrap: break-word; /* Text Wrapping Fix */
+}
+
+/* Container for dynamically added content like audio players */
+.output-entry {
+    margin-bottom: 1em; /* Space between entries */
+}
+
+/* Input Line */
+.input-line {
+    display: flex; align-items: center; padding: 0.5em 1em;
+    flex-shrink: 0; background-color: #0a0a0a; border-top: 1px solid #333;
+}
+#prompt { white-space: nowrap; padding-right: 5px; }
+#commandInput {
+    flex-grow: 1; background-color: transparent; border: none;
+    color: #00FF00; font-family: inherit; font-size: 1.1em;
+    outline: none; padding: 0;
+}
+#commandInput:disabled { opacity: 0.6; }
+
+/* --- Typing Animation Styles (If used for startup) --- */
+/* ... (typing animation styles - can be removed if not used) ... */
+
+
+/* --- Audio Log Playback Styles --- */
+.audio-control-button {
+    display: inline-block;
+    background-color: transparent;
+    border: 1px solid #00FF00;
+    color: #00FF00;
+    padding: 5px 15px;
+    font-family: 'VT323', monospace;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s, box-shadow 0.3s;
+    margin-right: 10px;
+    margin-bottom: 5px;
+    text-shadow: 0 0 3px rgba(0, 255, 0, 0.7);
+    min-width: 120px; /* Ensure buttons have same width */
+    text-align: center;
+}
+.audio-control-button:hover {
+    background-color: #00FF00;
+    color: #0D0D0D;
+    text-shadow: none;
+    box-shadow: 0 0 8px #00FF00;
+}
+.audio-control-button.playing { /* Style when playing */
+    background-color: #FF4500; /* Example: OrangeRed when playing */
+    border-color: #FF4500;
+    color: #0D0D0D;
+    text-shadow: none;
+}
+.audio-control-button.playing:hover {
+    box-shadow: 0 0 8px #FF4500;
+}
+
+.audio-playing-indicator {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 5px;
+    font-size: 0.9em;
+    color: #888; /* Default color */
+}
+.audio-playing-indicator span { /* Individual bars/dots */
+    display: inline-block;
+    width: 3px;
+    height: 10px;
+    margin-left: 2px;
+    background-color: #00FF00;
+    opacity: 0.3;
+}
+/* Animation for the indicator when playing */
+.audio-playing-indicator.playing span {
+    opacity: 1;
+    animation: audio-wave 0.8s infinite ease-in-out alternate;
+}
+.audio-playing-indicator.playing span:nth-child(1) { animation-delay: 0s; }
+.audio-playing-indicator.playing span:nth-child(2) { animation-delay: 0.2s; }
+.audio-playing-indicator.playing span:nth-child(3) { animation-delay: 0.4s; }
+.audio-playing-indicator.playing span:nth-child(4) { animation-delay: 0.6s; }
+
+@keyframes audio-wave {
+    0% { transform: scaleY(0.3); background-color: #008F00; }
+    50% { transform: scaleY(1.0); background-color: #00FF00; }
+    100% { transform: scaleY(0.3); background-color: #008F00; }
+}
+
+/* Transcript style */
+.audio-transcript {
+    display: block;
+    margin-top: 5px;
+    padding-left: 10px;
+    border-left: 2px solid #333;
+    font-size: 0.95em;
+    color: #bbb;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
+
+/* --- Image Filter Style --- */
+.terminal-image-filter {
+    filter: grayscale(100%) contrast(1.2) brightness(0.9) sepia(100%) hue-rotate(55deg) saturate(500%);
+    opacity: 0.85;
+}
+
+/* --- Terminal Output Formatting --- */
+.terminal-warning {
+    color: #FFD700; /* Yellow */
+    font-weight: bold;
+}
+.command-echo {
+    color: #aaa; /* Dimmer color for echoed commands */
+}
+
+/* For directory listings in 'ls' */
+.terminal-directory {
+    color: #87CEFA; /* Light Sky Blue */
+}
+
+/* For file listings in 'ls' - based on type */
+.terminal-file-log { /* .log, .err */
+    color: #FFD700; /* Yellow */
+}
+.terminal-file-audio { /* .ogg.txt */
+    color: #FFB6C1; /* Light Pink */
+}
+.terminal-file-rec { /* .rec */
+    color: #DA70D6; /* Orchid */
+}
+.terminal-file-pdf { /* .pdf.txt */
+     color: #FF6347; /* Tomato */
+}
+.terminal-file-txt { /* .txt and default */
+    color: #FFFFFF; /* White */
+}
+/* >> ADDED: Style for HTML file links << */
+.terminal-file-html, a.terminal-link {
+    color: #90EE90; /* Light Green */
+    text-decoration: none; /* Remove default underline */
+    cursor: pointer;
+}
+a.terminal-link:hover {
+    text-decoration: underline; /* Underline on hover */
+    color: #00FF00; /* Brighter green on hover */
+}
+/* >> END ADDED << */
+
+/* --- General Styles & Buttons --- */
+.submit-button { /* Style for login/send buttons */
+    background-color: transparent; border: 1px solid #00FF00; color: #00FF00;
+    padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1em;
+    cursor: pointer; transition: background-color 0.3s, color 0.3s;
+    text-shadow: 0 0 3px rgba(0, 255, 0, 0.7);
+}
+.submit-button:hover { background-color: #00FF00; color: #0D0D0D; text-shadow: none; box-shadow: 0 0 10px #00FF00; }
+.submit-button:disabled { opacity: 0.5; cursor: default; }
+.submit-button:disabled:hover { background-color: transparent; color: #00FF00; box-shadow: none; }
+
+.back-button { /* For return link */
+    background: none; border: 1px solid #00FF00; color: #00FF00;
+    font-family: 'VT323', monospace; font-size: 14px; padding: 5px 10px;
+    text-decoration: none; cursor: pointer; text-transform: uppercase;
+    transition: all 0.2s; display: inline-block;
+}
+.back-button:hover { background: #00FF00; color: #000; text-shadow: 0 0 5px #00FF00; }
+
+.feedback { font-style: italic; font-size: 0.9em; min-height: 1.2em; }
+.feedback.incorrect { color: #FF0000; }
+.feedback.correct { color: #00FF00; }
+.feedback.neutral { color: #aaa; }
+
+/* Footer */
+footer { text-align: center; padding: 10px 0; flex-shrink: 0; border-top: 1px solid #333; font-size: 0.8em; color: #777; }
+footer p { margin-top: 10px; }
+
+/* Scrollbar styling */
+#terminalOutput::-webkit-scrollbar { width: 8px; }
+#terminalOutput::-webkit-scrollbar-track { background: #111; }
+#terminalOutput::-webkit-scrollbar-thumb { background: #0f0; border: 1px solid #050505; }
+#terminalOutput::-webkit-scrollbar-thumb:hover { background: #90EE90; }
+
+        .form-container {
+            display: none;
+        }
+        .form-container.active {
+            display: block;
+        }
+        .tab-buttons {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .tab-button {
+            background: transparent;
+            border: 1px solid #333;
+            color: #777;
+            padding: 8px 15px;
+            font-family: 'VT323', monospace;
+            font-size: 0.9em;
+            cursor: pointer;
+            margin: 0 5px;
+            transition: color 0.3s, border-color 0.3s;
+        }
+        .tab-button.active {
+            color: #00FF00;
+            border-color: #00FF00;
+            text-shadow: 0 0 3px rgba(0,255,0,0.7);
+        }
+         .form-group small {
+            font-size: 0.8em;
+            color: #888;
+            display: block;
+            margin-top: 3px;
+        }
+        #loginScreen .form-group input[type="email"] {
+        width: calc(100% - 12px); background: #111;
+        border: 1px solid #333; color: #00FF00; padding: 5px;
+        font-family: inherit; font-size: 1em;
+        }
+}
