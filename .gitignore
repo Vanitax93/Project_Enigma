@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+*.egg-info/
+.conda/
+# Environment variables
+.env
+
+# Database file
+*.db
+*.sqlite3
+
+# IDE and OS files
+.idea/
+.vscode/
+*.DS_Store

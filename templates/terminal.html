@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Terminal Interface :: Project Enigma</title>
+    <link rel="stylesheet" href="/static/css/terminalstyle.css">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
+</head>
+<body>
+    <div class="terminal-container secure-terminal">
+        <div class="scanline-overlay"></div>
+
+        <div id="loginScreen">
+            <header>
+                <pre id="logoAscii">
+   ___                        ___
+  / o |_   _   () __  __ /7  / _/ _    () _   _     _
+ / _,'//7,'o| /7,'o/,','/_7 / _/ / \/7/7,'o| / \'\,'o|
+/_/  //  |_,'// |_( \_\//  /___//_n_/// |_,'/_nn_/|_,7
+            //                          _//
+                </pre>
+                <p>:: SECURE TERMINAL INTERFACE :: AUTHENTICATION REQUIRED ::</p>
+            </header>
+
+            <div class="tab-buttons">
+                <button class="tab-button active" id="loginTabButton" type="button">Login</button>
+                <button class="tab-button" id="registerTabButton" type="button">Register</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="form-container active">
+                <div class="form-group">
+                    <label for="username">> OPERATIVE ID:</label>
+                    <input type="text" id="username" name="username" required autocomplete="off" autofocus>
+                </div>
+                <div class="form-group">
+                    <label for="password">> ACCESS CODE:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="button" id="loginButton" class="submit-button" style="width:100%;">> Authenticate_</button>
+                <div id="loginFeedback" class="feedback neutral" style="margin-top: 15px; min-height: 1.2em;"></div>
+            </form>
+
+            <!-- Registration Form -->
+            <form id="registrationForm" class="form-container">
+                <div class="form-group">
+                    <label for="regUsername">> Choose Operative ID:</label>
+                    <input type="text" id="regUsername" name="regUsername" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">> Secure Email:</label>
+                    <input type="email" id="regEmail" name="regEmail" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">> New Access Code:</label>
+                    <input type="password" id="regPassword" name="regPassword" required>
+                    <small>:: Min. 6 characters ::</small>
+                </div>
+                <div class="form-group">
+                    <label for="regConfirmPassword">> Confirm Access Code:</label>
+                    <input type="password" id="regConfirmPassword" name="regConfirmPassword" required>
+                </div>
+                <button type="button" id="registerButton" class="submit-button" style="width:100%;">> Register Candidate_</button>
+                <div id="registrationFeedback" class="feedback neutral" style="margin-top: 15px; min-height: 1.2em;"></div>
+            </form>
+
+        </div>
+
+        <div id="terminalOutput" style="display: none; flex-direction: column; flex-grow: 1;">
+            <pre id="outputArea"></pre>
+            <div class="input-line" style="display: none;">
+                <span id="prompt"></span>
+                <input type="text" id="commandInput" autocomplete="off" spellcheck="false" disabled>
+            </div>
+        </div>
+
+        <footer>
+            <p>:: ENIGMA NETWORK TERMINAL v3.7 :: (c) Cognitive Synergies Inc. ::</p>
+        </footer>
+    </div>
+    <script src="/static/js/terminal/terminal_filesystem.js"></script>
+    <script src="/static/js/terminal/terminalscript.js"></script>
+</body>
+</html>

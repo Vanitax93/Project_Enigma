@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Enigma - Diagnostic Output</title>
+    <link rel="stylesheet" href="new_riddles_style.css">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="riddle-container">
+        <h1>Low-Level Diagnostics</h1>
+        <p>System integrity scan running...</p>
+        <p>Check the low-level diagnostic console output for the final status code.</p>
+        <p class="hint">(Hint: Open your browser's Developer Console (F12 -> Console). The answer isn't logged plainly. Look for encoded messages, collapsed groups, or messages split across lines.)</p>
+        </div>
+
+    <script>
+        console.log("Initializing diagnostic subsystem...");
+        console.log("Checking core matrix resonance...");
+        console.log("Status: Nominal.");
+        console.log("Running security checksum...");
+        // Obfuscated message parts
+        const part1 = "T1ZFUlJJRE"; // Base64 for "OVERRID"
+        const part2 = "UgQkxQSE";   // Base64 for "E ALPH" - Incorrect letters here, should be E ALPHA
+        const part3 = "E";          // Base64 for "A"
+
+        // Corrected Base64 for "OVERRIDE ALPHA"
+        // O V E R R I D E   A L P H A
+        // T1ZFUlJJREUgQUxQSE E= (Incorrect padding)
+        // Let's encode parts: "OVERRIDE" and "ALPHA"
+        const encodedPart1 = btoa("OVERRIDE"); // T1ZFUlJJREU=
+        const encodedPart2 = btoa("ALPHA");   // QUxQSE E=
+
+        console.warn("Potential anomaly detected in Sector Gamma.");
+        console.log("Final Status Code (Encoded Part 1):", encodedPart1);
+
+        // Collapsed group example
+        console.groupCollapsed("Detailed System Logs (Filtered)");
+            console.log("Log Entry 4815: Process stable.");
+            console.log("Log Entry 4816: Minor fluctuation.");
+            console.log("Hidden component status:", atob("QUxQSE E=")); // "ALPHA"
+        console.groupEnd();
+
+        console.log("Diagnostic Complete.");
+
+        // You could also split the Base64 string itself:
+        console.info("Fragmented Status Code:", "QUx", "QSE", "E="); // ALPHA
+        console.log("Re-assemble and decode the status code fragments or check collapsed logs.");
+
+    </script>
+</body>
+</html>

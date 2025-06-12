@@ -1,0 +1,7 @@
+Flask==<version>
+Flask-SQLAlchemy==<version>
+Flask-CORS==<version>
+python-dotenv==<version>
+openai==<version>
+Werkzeug==<version>
+
