@@ -44,31 +44,6 @@ Project: Terminal Enigma is an interactive web-based puzzle game designed to cha
 * SQLite (Default database for player progress and AI puzzles)
 * python-dotenv (For managing environment variables)
 
-## Project Structure (Key Files)
-```bash
- app.py                     
-Main32 Flask backend server, API endpoints|-- init_database.py           
-Script to initialize the database schema|-- requirements.txt           
-Python dependencies|-- .env                       
-Environment variables (OpenAI API Key, DB URI - NOT COMMITTED)||-- static/                    
-(Assumed location for CSS, JS, assets if not served directly)|   |-- style.css              
-Main32 game styling|   |-- terminalstyle.css      
-Styling for the secure terminal|   |-- game-logic.js          
-Core frontend game logic|   |-- game-state.js          
-Frontend global state management|   |-- ui-manager.js          
-Frontend UI manipulation and effects|   |-- riddle-data.js         
-Static riddle content|   |-- nightmare-riddles.js   
-Nightmare mode riddles|   |-- terminalscript.js      
-Logic for the secure terminal |-- terminal_filesystem.js |-- chat-sequences.js      
-Chat dialogue logic|   |-- md5.min.js             
-MD5 hashing library|   |-- (audio files .wav)     
-Sound assets|   |-- (images) |-- templates/                 
-           
-Main32 game page| index.html |-- terminal.html          
-Secure terminal page| -- (other HTML files for lore, intros, etc.)|-- enigma_progress.db         
-SQLite database file (created by init_database.py)|-- README.md                  
-
-```
 ## Setup and Installation
 
 1.  **Clone the Repository:**
