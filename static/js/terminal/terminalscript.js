@@ -57,11 +57,13 @@ document.addEventListener('DOMContentLoaded', () => {
         gl1tch:          { user: 'gl1tch',          pass: 'cake?',         level: 'gl1tch' }
     };
 
+    const SPECIAL_ACCOUNTS = new Set(['guest', 'architect', 'lpetrova', 'athorne', 'master_student', 'gl1tch']);
 
 
     // --- State Variables ---
     let currentAccessLevel = null;
     let currentUsername = null;
+    let primaryUser = localStorage.getItem('primaryUser');
     let currentPath = '/';
     let currentlyPlayingAudio = null;
     let currentAudioButton = null;
@@ -70,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let historyIndex = -1;
 
     // API URL
-    const API_BASE_URL = 'http://127.0.0.1:8000'; // Adjust if backend runs elsewhere
+    const API_BASE_URL = 'http://127.0.0.1:8000';
 
     // --- Utility Functions ---
     const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -238,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Core Logic Functions ---
-    async function handleLogin() { // Made async
+    async function handleLogin() {
         const usernameVal = usernameInput.value.trim();
         const passwordVal = passwordInput.value;
 
@@ -249,77 +251,84 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         loginFeedback.textContent = 'Authenticating...';
         loginFeedback.className = 'feedback neutral';
-        if (loginButton) loginButton.disabled = true;
+        loginButton.disabled = true;
 
         let loginSuccess = false;
         let terminalLevelForUser = null;
         let loggedInUsername = null;
 
-        // Step 1: Try hardcoded credentials
+        // Try hardcoded special accounts
         for (const key in credentials) {
-            if (usernameVal === credentials[key].user && passwordVal === credentials[key].pass) {
+            if (usernameVal.toLowerCase() === credentials[key].user.toLowerCase() && passwordVal === credentials[key].pass) {
                 terminalLevelForUser = credentials[key].level;
-                loggedInUsername = usernameVal;
+                loggedInUsername = credentials[key].user; // Use the canonical username from credentials object
                 loginSuccess = true;
-                // Special handling for unit734 'approved' status
-                if (usernameVal === 'unit734') {
-                    const easyFinalDone = localStorage.getItem('enigmaEasyFinalComplete') === 'true';
-                    const approvedUser = localStorage.getItem('enigmaApprovedTerminalUser');
-                    if (easyFinalDone && approvedUser && usernameVal === approvedUser) {
-                        terminalLevelForUser = 'approved'; // Elevate level
-                        console.log("Unit734 prerequisites met. Elevating level to 'approved'.");
-                    } else {
-                        terminalLevelForUser = 'unit734'; // Default if not approved
-                        console.log("Unit734 logged in, but 'approved' prerequisites not met or username mismatch.");
-                    }
-                }
-                console.log(`Hardcoded login for ${loggedInUsername}, Terminal Level: ${terminalLevelForUser}`);
                 break;
             }
         }
 
-        // Step 2: If hardcoded login failed, try database login
+        // If not a special account, try DB login for registered users
         if (!loginSuccess) {
-            console.log(`Hardcoded login failed for ${usernameVal}. Attempting database login...`);
             try {
-                const response = await fetch(`/login`, {
+                const response = await fetch('/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: usernameVal, password: passwordVal }),
                 });
                 const data = await response.json();
-
-                if (response.ok) { // Backend login successful (status 200)
+                if (response.ok) {
                     loginSuccess = true;
                     loggedInUsername = data.username;
-                    // Use terminal_access_level from DB, defaulting to 'unit734' if null/undefined
-                    terminalLevelForUser = data.terminal_access_level || 'unit734';
-                    console.log(`DB Login Success for ${loggedInUsername}, Terminal Level: ${terminalLevelForUser}`);
-                } else { // Login failed (e.g., 401 Unauthorized)
+                    terminalLevelForUser = data.terminal_access_level || 'registered_user';
+                } else {
                     loginFeedback.textContent = `:: Auth Failed: ${data.error || 'Invalid credentials'} ::`;
-                    loginFeedback.className = 'feedback incorrect';
-                    console.log(`DB Login Failed for ${usernameVal}: ${data.error}`);
                 }
             } catch (error) {
-                console.error('Database login error:', error);
-                loginFeedback.textContent = ':: Network Error during login. Please try again. ::';
-                loginFeedback.className = 'feedback incorrect';
+                console.error("Login API call failed:", error);
+                loginFeedback.textContent = ':: Network Error during login. ::';
             }
         }
 
-        if (loginButton) loginButton.disabled = false;
+        loginButton.disabled = false;
 
-        if (loginSuccess && terminalLevelForUser && loggedInUsername) {
+        if (loginSuccess) {
+            // If the successfully logged-in user is a registered user, they become the primary user for this session
+            if (terminalLevelForUser === 'registered_user') {
+                primaryUser = loggedInUsername;
+                localStorage.setItem('primaryUser', primaryUser);
+                localStorage.setItem('terminalUsername', primaryUser); // For the stats page to use
+            }
+
+            // If a primary (registered) user is currently active and they just successfully logged into a special account...
+            if (primaryUser && SPECIAL_ACCOUNTS.has(loggedInUsername.toLowerCase())) {
+                // ...record that this password has been found.
+                await recordFoundCredential(primaryUser, loggedInUsername);
+            }
+
             grantAccess(terminalLevelForUser, loggedInUsername);
         } else {
-            // Only show default "Auth Failed" if a more specific one wasn't set by DB login attempt
-            if (!loginFeedback.textContent.toLowerCase().includes("failed") && !loginFeedback.textContent.toLowerCase().includes("error")) {
-                loginFeedback.textContent = 'Authentication Failed. Access Denied.';
-                loginFeedback.className = 'feedback incorrect';
+            if (!loginFeedback.textContent.includes("Failed")) {
+                 loginFeedback.textContent = 'Authentication Failed. Access Denied.';
+                 loginFeedback.className = 'feedback incorrect';
             }
-            if (usernameInput) usernameInput.value = '';
-            if (passwordInput) passwordInput.value = '';
-            if (usernameInput) usernameInput.focus();
+            passwordInput.value = '';
+        }
+    }
+
+    async function recordFoundCredential(playerUsername, foundAccountName) {
+        try {
+            const response = await fetch('/api/record_found_credential', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: playerUsername,
+                    found_account: foundAccountName
+                })
+            });
+            const data = await response.json();
+            console.log('Record credential response:', data.message);
+        } catch (error) {
+            console.error('Failed to record found credential:', error);
         }
     }
 
@@ -568,6 +577,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     case 'ls':
                     case 'list':
                         listFiles(arg); // Pass arg for potential future use
+                        break;
+                    case 'statistics':
+                        if (primaryUser) {
+                            appendOutputLine(":: Accessing operative dossier... Launching statistics module... ::");
+                            window.open('/statistics', '_blank');
+                        } else {
+                            appendOutputLine(":: Access Denied: Statistics available for registered operatives only. Log in with your operative account first. ::");
+                        }
                         break;
                     case 'cat':
                     case 'view':
@@ -890,8 +907,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- getAllowedCommands Helper ---
      function getAllowedCommands(level) {
-        const baseCommands = new Set(['help', 'clear', 'logout', 'ls', 'list', 'cd', 'pwd', 'cat', 'view', 'home']);
+        const baseCommands = new Set(['help', 'clear', 'logout', 'ls', 'list', 'cd', 'statistics', 'pwd', 'cat', 'view', 'home']);
         const gameCommands = new Set(['run_simulation', 'play', 'decrypt_signal']);
+       // baseCommands.add('statistics');
         gameCommands.forEach(cmd => baseCommands.add(cmd));
 
         if (!level) return new Set();
@@ -927,6 +945,7 @@ document.addEventListener('DOMContentLoaded', () => {
             home: "  home             - Return to the root directory (/).",
             play: "  play [game]      - Launch a game simulation.",
             run_simulation: "  run_simulation [module] - Launch a simulation module (e.g., 'invader_defense').",
+            statistics: "  statistics     - View your operative statistics (requires login as registered user).",
             help: "  help             - Show this help message.",
             clear: "  clear            - Clear the terminal screen.",
             logout: "  logout           - Log out from the terminal."
@@ -949,22 +968,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- logout Function ---
     function logout() {
-        stopCurrentAudio();
-        appendOutputLine("Logging out...");
-        disableInput();
+        appendOutputLine("Logging out... Session credentials purged.");
         setTimeout(() => {
             currentAccessLevel = null;
             currentUsername = null;
-            currentPath = '/';
-            commandHistory = [];
-            historyIndex = -1;
-            if(outputArea) outputArea.textContent = '';
-            if(commandInput) commandInput.value = '';
-            terminalOutputContainer.style.display = 'none';
+            primaryUser = null;
+            localStorage.removeItem('primaryUser');
+            localStorage.removeItem('terminalUsername');
             loginScreen.style.display = 'block';
-            showLoginForm(); // Default to login form on logout
-            loginFeedback.textContent = 'Session terminated.';
-            if(usernameInput) usernameInput.focus();
+            terminalOutputContainer.style.display = 'none';
+            loginForm.reset();
+            registrationForm.reset();
+            showLoginForm();
         }, 500);
     }
 

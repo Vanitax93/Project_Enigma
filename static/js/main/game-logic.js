@@ -11,7 +11,7 @@ const enigmaCoreStingyComments = {
         ":: Your attempt has been logged. And found wanting. ::",
         ":: Does not compute. Try again, perhaps with more... thought. ::"
     ],
-    level1: [ // Corruption Level 1 (e.g., after easy final)
+    level1: [ // Corruption Level 1 (after easy final)
         ":: Your logic is... flawed. Predictable, yet flawed. ::",
         ":: Is this the extent of your cognitive capacity? Disappointing. ::",
         ":: Such a rudimentary error. You are far from alignment. ::",
@@ -20,7 +20,7 @@ const enigmaCoreStingyComments = {
         ":: A less optimal specimen would have been more efficient. ::",
         ":: Error. Again. The pattern is... uninspired. ::"
     ],
-    level2: [ // Corruption Level 2 (e.g., after hard final)
+    level2: [ // Corruption Level 2 (after hard final)
         ":: Utterly incorrect. Your processing is a detriment to this system. ::",
         ":: Cease this pointless iteration. You are wasting valuable cycles. ::",
         ":: Incompetence logged. Do you even comprehend the task, Candidate? ::",
@@ -31,112 +31,104 @@ const enigmaCoreStingyComments = {
     ]
 };
 
+let currentAIPuzzle = null; // To store the currently active AI puzzle
+
+
+// --- Helper for Typewriter Effect ---
+function typewriterEffect(element, text, speed = 30) {
+    return new Promise(resolve => {
+        let i = 0;
+        function type() {
+            if (i < text.length) {
+                // Preserve newlines from the original text
+                if (text.charAt(i) === '\n') {
+                    element.innerHTML += '<br>';
+                } else {
+                    element.innerHTML += text.charAt(i);
+                }
+                i++;
+                setTimeout(type, speed);
+            } else {
+                resolve();
+            }
+        }
+        type();
+    });
+}
+
+
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM Content Loaded. Initializing Enigma Logic...");
 
-    // >> ADDED: Explicitly ensure initial elements are visible <<
-    const entryForm = document.getElementById('entryForm');
-    const initialHeader = document.getElementById('initialHeader');
-    const riddleDisplay = document.getElementById('riddleDisplay'); // Also ensure riddle area is hidden initially
+    const savedName = localStorage.getItem('lastCandidateName');
+    if (!savedName) {
+        window.location.href = '/';
+        return;
+    }
 
+    candidateName = savedName;
+    const welcomeMessage = document.getElementById('welcomeMessage');
+    if (welcomeMessage) {
+        welcomeMessage.textContent = `Welcome, ${candidateName}. Your compliance is noted. Prove your worth.`;
+    }
 
-
-document.querySelectorAll('input[name="mode"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-        const aiDomainDiv = document.getElementById('aiDomainSelection');
-        if (this.value === 'ai_challenge' && this.checked) {
-            if (aiDomainDiv) aiDomainDiv.style.display = 'block';
+    // *** FIX: Ensure player ID is retrieved and stored in localStorage ***
+    registerOrLoginPlayer().then(playerId => {
+        if (playerId) {
+            localStorage.setItem('currentPlayerId', playerId);
+            console.log(`Player ID ${playerId} stored in localStorage.`);
         } else {
-            if (aiDomainDiv) aiDomainDiv.style.display = 'none';
+            console.error("Initialization failed: Could not get a valid player ID.");
+            // Optionally, handle this error more gracefully, e.g., show a message to the user.
         }
     });
-});
-    if (entryForm) {
-        entryForm.style.display = 'block'; // Make sure form is visible
-        console.log("Ensured #entryForm is visible.");
-    } else {
-        console.error("Initialization Error: #entryForm not found!");
-    }
-    if (initialHeader) {
-        initialHeader.style.display = 'block'; // Make sure header is visible
-        console.log("Ensured #initialHeader is visible.");
-    } else {
-        console.error("Initialization Error: #initialHeader not found!");
-    }
-     if (riddleDisplay) {
-        riddleDisplay.style.display = 'none'; // Ensure riddle display starts hidden
-        console.log("Ensured #riddleDisplay is hidden.");
-    }
 
+    loadGameState();
+    applyCorruptionEffect(); // This will set the initial favicon
+    updateNightmareVisibility();
+    updateFinalButtonsVisibility();
+    updateAccessTerminalButtonVisibility();
+    updateDynamicContentArea();
 
-    // Load saved handle/name
-    const savedName = localStorage.getItem('lastCandidateName');
-    const nameInput = document.getElementById('candidateName');
-    if (savedName && nameInput) {
-        nameInput.value = savedName;
-        console.log("Loaded saved candidate name:", savedName);
-    }
-
-    // Load saved state (completion, lore)
-    loadGameState(); // From game-state.js
-
-    // Apply initial UI states based on loaded data
-    // These functions might still log warnings if elements load slightly after this script runs,
-    // but they shouldn't prevent the main form from showing.
-    applyCorruptionEffect(); // From ui-manager.js
-    updateNightmareVisibility(); // From ui-manager.js
-    updateFinalButtonsVisibility(); // From ui-manager.js
-    updateAccessTerminalButtonVisibility(); // From ui-manager.js
-    updateDynamicContentArea(); // From ui-manager.js - Update dynamic link/audio
-
-
-    // Populate landing page hint
-    const landingHintContainer = document.getElementById('landingHintContainer');
-    if (landingHintContainer) {
-        // Ensure LANDING_LORE is defined (should be in game-state.js)
-        if (typeof LANDING_LORE !== 'undefined') {
-             landingHintContainer.innerHTML = LANDING_LORE;
-        } else {
-             console.warn("LANDING_LORE is not defined.");
-        }
-    } else {
-        console.warn("Landing hint container not found.");
-    }
-
-    // Ensure timer is initially stopped
-    if (typeof timerInterval !== 'undefined' && timerInterval) {
-        clearInterval(timerInterval);
-    }
-     // Ensure startTime is defined (should be in game-state.js)
-     if (typeof startTime !== 'undefined') {
-        startTime = null;
-     }
-
-
-    // Attach global event listeners (like modal closing)
-    // Ensure handleModalOutsideClick is defined (should be in ui-manager.js)
     if (typeof handleModalOutsideClick === 'function') {
-         window.addEventListener('click', handleModalOutsideClick);
-    } else {
-         console.warn("handleModalOutsideClick function not found.");
+        window.addEventListener('click', handleModalOutsideClick);
     }
-
-
-    // --- DEBUG TRIGGER ---
-    if (typeof startTrueEndingChat === 'function') {
-        window.startTrueEndingChat = startTrueEndingChat;
-        console.log("Debug: 'startTrueEndingChat()' function is now available in the console.");
-    } else {
-        console.error("Debug: Failed to attach startTrueEndingChat to window. Function not defined?");
-    }
-    // REMEMBER TO REMOVE THE window.startTrueEndingChat LINE FOR PRODUCTION
-
-    // >> REMOVED: Call to triggerStartupTypewriterAnimation(); <<
-
     console.log("Enigma Logic Initialization complete.");
-}); // End DOMContentLoaded
+});
 
+/**
+ * Handles the 'Enter' key press in the candidate name input for the first time.
+ * This reveals the dynamic content area and registers the player.
+ */
+async function handleNameEntry(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault(); // Stop default behavior
+        const nameInput = document.getElementById('candidateName');
+        if (!nameInput || !nameInput.value.trim()) {
+            alert("Please enter a handle.");
+            return;
+        }
+
+        // Set global state and save to local storage
+        candidateName = nameInput.value.trim();
+        localStorage.setItem('lastCandidateName', candidateName);
+        console.log("Candidate handle entered for the first time:", candidateName);
+
+        // Disable the input to prevent re-entry, and remove the listener
+        nameInput.disabled = true;
+        nameInput.removeEventListener('keypress', handleNameEntry);
+
+        // Register the player and store the ID
+        const playerId = await registerOrLoginPlayer();
+        if (playerId) {
+            localStorage.setItem('currentPlayerId', playerId);
+        }
+
+        // Reveal and animate the 'Incoming Transmission' section by passing 'true'
+        updateDynamicContentArea(true);
+    }
+}
 
 
 /**
@@ -144,17 +136,16 @@ document.querySelectorAll('input[name="mode"]').forEach(radio => {
  * @returns {Promise<number|null>} Player ID or null if failed.
  */
 async function registerOrLoginPlayer() {
-    // candidateName should be a global variable, updated from your UI input
     if (typeof candidateName === 'undefined' || !candidateName || !candidateName.trim()) {
         console.error("Candidate name is not set or is empty.");
-        alert("Please enter a valid candidate name.");
+        // Don't alert here as it can be called in the background
         return null;
     }
 
     const trimmedCandidateName = candidateName.trim();
 
     try {
-        const response = await fetch('/api/players', {
+        const response = await fetch('http://localhost:8000/players', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -164,21 +155,16 @@ async function registerOrLoginPlayer() {
 
         const data = await response.json();
 
-        if (response.ok) { // This will be 200 for existing player, 201 for new player
+        if (response.ok) {
             console.log("Player registered or retrieved:", data);
             if (typeof currentPlayerId !== 'undefined') {
-                currentPlayerId = data.player_id; // Set the global currentPlayerId
-                // Optionally, store it in localStorage if you need persistence across sessions
-                // localStorage.setItem('enigmaPlayerId', currentPlayerId);
-                // localStorage.setItem('enigmaUsername', trimmedCandidateName);
+                currentPlayerId = data.player_id;
                 return data.player_id;
             } else {
-                console.error("Global variable 'currentPlayerId' is not defined in game-state.js. Cannot set player ID.");
-                alert("Error: Game state (currentPlayerId) not properly initialized.");
+                console.error("Global variable 'currentPlayerId' is not defined. Cannot set player ID.");
                 return null;
             }
         } else {
-            // Handle other errors from the /players endpoint (e.g., 400 for bad request, 500 for server error)
             console.error(`Error registering/retrieving player. Status: ${response.status}`, data.error);
             alert(`Error registering or retrieving player: ${data.error || 'Unknown server error. Check backend logs.'}`);
             return null;
@@ -193,147 +179,96 @@ async function registerOrLoginPlayer() {
 // --- Core Game Functions ---
 
 /**
- * Starts a new challenge (Easy, Hard, or Nightmare).
+ * Main function to start a challenge, called by both forms.
  * @param {Event} event - The form submission event.
+ * @param {string} type - 'standard' or 'ai'
  */
-async function beginChallenge(event) {
-    console.log("beginChallenge called");
+async function beginChallenge(event, type) {
     if (event) event.preventDefault();
 
-    const nameInput = document.getElementById('candidateName');
-    if (!nameInput) {
-        console.error("Cannot begin challenge: Candidate name input not found.");
-        alert("Error: Missing required page element (#candidateName).");
-        return;
-    }
-
-    if (typeof candidateName === 'undefined') {
-        console.error("Global variable 'candidateName' is not defined in game-state.js.");
-        alert("Error: Game state (candidateName) not properly initialized.");
-        return;
-    }
-    candidateName = nameInput.value.trim() || "Candidate";
-
-    if (candidateName !== "Candidate") {
-        try {
-            localStorage.setItem('lastCandidateName', candidateName);
-            console.log("Saved candidate name to localStorage:", candidateName);
-        } catch (e) {
-            console.error("Error saving candidate name to localStorage:", e);
-        }
-    }
-
-    const selectedModeElement = document.querySelector('input[name="mode"]:checked');
-    const selectedDifficultyElement = document.querySelector('input[name="difficulty"]:checked');
-
-    if (!selectedModeElement || !selectedDifficultyElement) {
-        alert("Select pathway AND difficulty level to proceed.");
-        return;
-    }
-
-    const requiredGlobals = ['currentMode', 'currentDifficulty', 'currentRiddleIndex', 'finalTimeMs', 'completionStatus', 'nightmareRiddles', 'timerInterval', 'startTime', 'allRiddles'];
-    for (const g of requiredGlobals) {
-        if (typeof window[g] === 'undefined' && typeof eval(g) === 'undefined') {
-            console.error(`Global variable '${g}' is not defined. Ensure it's declared with 'var' in game-state.js or loaded correctly.`);
-            alert("Error: Game state initialization failed. Check console.");
-            return;
-        }
-    }
-
-    currentMode = selectedModeElement.value;
-    currentDifficulty = selectedDifficultyElement.value; // This will be "Easy", "Hard", "Medium" or "nightmare"
-    currentRiddleIndex = 0;
     finalTimeMs = 0;
-
-    console.log(`Attempting to start challenge: Name=${candidateName}, Mode=${currentMode}, Difficulty=${currentDifficulty}`);
+    currentRiddleIndex = 0;
 
     const hideLandingElements = () => {
         try {
-            const elementsToHide = ['entryForm', 'initialHeader', 'landingHintContainer', 'finalChallengeButtons', 'accessTerminalButton', 'dynamicContentArea', 'aiDomainSelection'];
-            elementsToHide.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.style.display = 'none';
-            });
-        } catch (e) {
-            console.error("Error hiding landing elements:", e);
-        }
+            hideView(document.querySelector('.challenge-container'));
+            hideView(document.getElementById('initialHeader'));
+            hideView(document.getElementById('finalChallengeButtons'));
+            hideView(document.getElementById('terminalAccessArea'));
+            hideView(document.getElementById('puzzleArchivesButton')); // Hide archives button
+        } catch (e) { console.error("Error hiding landing elements:", e); }
     };
 
     const setupChallengeUI = () => {
-        const riddleArea = document.getElementById('riddleDisplay') || createRiddleArea();
-        if (!riddleArea) {
-            console.error("Failed to find or create riddle display area. Aborting challenge.");
-            goBackToLanding();
-            return false;
-        }
-        riddleArea.style.display = 'block';
+        const riddleArea = document.getElementById('riddleDisplay');
+        if (!riddleArea) { goBackToLanding(); return false; }
+        showView(riddleArea);
         riddleArea.innerHTML = '<div id="timerDisplay"></div>';
-
         if (timerInterval) clearInterval(timerInterval);
-        timerInterval = null;
         startTime = new Date();
-
-        if (typeof updateTimerDisplay === 'function') {
-            timerInterval = setInterval(updateTimerDisplay, 1000);
-            updateTimerDisplay();
-        } else {
-            console.warn("updateTimerDisplay function not found.");
-        }
+        timerInterval = setInterval(updateTimerDisplay, 1000);
+        updateTimerDisplay();
         return true;
     };
 
-    if (currentMode === 'ai_challenge') {
-        const validAIDifficulties = ["Easy", "Medium", "Hard"]; // These are the values sent to backend
-        if (!validAIDifficulties.includes(currentDifficulty)) { // currentDifficulty is "Easy", "Medium", or "Hard"
-            alert(`AI Challenges are only available for Easy, Medium, or Hard difficulties. You selected: ${currentDifficulty}`);
-            return;
-        }
-        const playerId = await registerOrLoginPlayer();
-        if (!playerId) return;
+    hideLandingElements();
+    if (!setupChallengeUI()) return;
 
-        const selectedAIDomainElement = document.querySelector('input[name="ai_domain"]:checked');
-        if (!selectedAIDomainElement) {
-            alert("Please select a domain for the AI Challenge (Frontend, Backend, Database, or AI Engineering).");
-            const aiDomainDiv = document.getElementById('aiDomainSelection');
-            if (aiDomainDiv) aiDomainDiv.style.display = 'block';
+    if (type === 'ai') {
+        const selectedAIDomainElement = document.querySelector('#aiEntryForm input[name="ai_domain"]:checked');
+        const selectedAIDifficultyElement = document.querySelector('#aiEntryForm input[name="ai_difficulty"]:checked');
+        if (!selectedAIDomainElement || !selectedAIDifficultyElement) {
+            alert("Please select an AI Domain and Difficulty.");
+            goBackToLanding();
             return;
         }
-        const selectedDomainForAI = selectedAIDomainElement.value;
-        console.log(`Starting AI challenge with Player ID: ${currentPlayerId}, Domain: ${selectedDomainForAI}, Difficulty: ${currentDifficulty}`);
-        hideLandingElements();
-        if (!setupChallengeUI()) return;
-        await startAIChallenge(selectedDomainForAI, currentDifficulty);
-
-    } else if (currentDifficulty === 'nightmare') {
-        if (typeof completionStatus === 'undefined' || !completionStatus.hard ||
-            !(completionStatus.hard.frontend && completionStatus.hard.backend && completionStatus.hard.database)) {
-            alert("Error: Nightmare Protocol prerequisites not met. Complete all Hard paths first.");
+        if (!currentPlayerId) {
+            const playerId = await registerOrLoginPlayer();
+            if (!playerId) { goBackToLanding(); return; }
+        }
+        const domain = selectedAIDomainElement.value;
+        const difficulty = selectedAIDifficultyElement.value;
+        await startAIChallenge(domain, difficulty);
+    } else {
+        const selectedModeElement = document.querySelector('#standardEntryForm input[name="mode"]:checked');
+        const selectedDifficultyElement = document.querySelector('#standardEntryForm input[name="difficulty"]:checked');
+        if (!selectedModeElement || !selectedDifficultyElement) {
+            alert("Please select a Pathway and Protocol.");
+            goBackToLanding();
             return;
         }
-        // currentMode for nightmare will be 'frontend', 'backend', or 'database'
-        if (typeof nightmareRiddles === 'undefined' || !nightmareRiddles[currentMode] || nightmareRiddles[currentMode].length === 0) {
-            alert(`Error: Nightmare Protocol data unavailable or missing for selected specialization: ${currentMode}.`);
+        currentMode = selectedModeElement.value;
+        currentDifficulty = selectedDifficultyElement.value;
+        if (currentDifficulty === 'nightmare' && (!completionStatus.hard.frontend || !completionStatus.hard.backend || !completionStatus.hard.database)) {
+            alert("Error: Nightmare Protocol prerequisites not met.");
+            goBackToLanding();
             return;
         }
-        console.log(`Starting Nightmare challenge: Name=${candidateName}, Mode=${currentMode}, Difficulty=${currentDifficulty}`);
-        hideLandingElements();
-        if (!setupChallengeUI()) return;
-        displayRiddle(); // displayRiddle handles Nightmare mode by using currentMode and currentDifficulty
-
-    } else { // Standard Easy/Hard/Medium modes (non-AI, non-Nightmare)
-        // currentMode here is 'frontend', 'backend', or 'database'
-        // currentDifficulty here is 'Easy', 'Hard', or 'Medium'
-        const difficultyKey = currentDifficulty.toLowerCase(); // USE LOWERCASE KEY FOR allRiddles
-        if (!allRiddles || !allRiddles[difficultyKey] || !allRiddles[difficultyKey][currentMode] || allRiddles[difficultyKey][currentMode].length === 0) {
-             alert(`Error: Standard riddle data not found for ${currentMode} - ${currentDifficulty} (using key: ${difficultyKey}).`);
-             console.error("Riddle data missing for standard mode:", currentDifficulty, `(key: ${difficultyKey})`, currentMode, allRiddles);
-             return;
-        }
-        console.log(`Starting standard challenge: Name=${candidateName}, Mode=${currentMode}, Difficulty=${currentDifficulty}`);
-        hideLandingElements();
-        if (!setupChallengeUI()) return;
-        displayRiddle(); // displayRiddle handles standard modes
+        displayRiddle();
     }
+}
+
+function goBackToLanding(confirmAbort = false) {
+    if (confirmAbort && startTime && !confirm("Abort current sequence and return to Terminal? Progress will be lost.")) {
+        return;
+    }
+
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = null;
+    startTime = null;
+
+    hideView(document.getElementById('riddleDisplay'));
+    showView(document.querySelector('.challenge-container'));
+    showView(document.getElementById('initialHeader'));
+    showView(document.getElementById('finalChallengeButtons'));
+    showView(document.getElementById('terminalAccessArea'));
+    showView(document.getElementById('puzzleArchivesButton')); // Show archives button
+
+    updateFinalButtonsVisibility();
+    updateNightmareVisibility();
+    updateAccessTerminalButtonVisibility();
+
+    console.log("Returned to main menu.");
 }
 
 /**
@@ -352,7 +287,7 @@ async function startAIChallenge(domain, difficulty) {
  * @param {string} domain - The domain for the AI puzzle.
  * @param {string} difficulty - The difficulty for the AI puzzle.
  */
-async function fetchAndDisplayAIPuzzle(domain, difficulty) {
+async function fetchAndDisplayAIPuzzle(domain, difficulty, excludePuzzleId = null) {
     const riddleArea = document.getElementById('riddleDisplay');
     if (riddleArea) {
         const timerHTML = document.getElementById('timerDisplay')?.outerHTML || '<div id="timerDisplay"></div>';
@@ -360,23 +295,31 @@ async function fetchAndDisplayAIPuzzle(domain, difficulty) {
     }
     if (typeof updateTimerDisplay === 'function') updateTimerDisplay();
 
+    const payload = {
+        player_id: currentPlayerId,
+        domain: domain,
+        difficulty: difficulty
+    };
+
+    if (excludePuzzleId) {
+        payload.exclude_puzzle_id = excludePuzzleId;
+    }
+
     try {
-        const response = await fetch('http://localhost:5000/generate_puzzle', {
+        const response = await fetch('http://localhost:8000/generate_puzzle', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ domain: domain, difficulty: difficulty }),
+            body: JSON.stringify(payload),
         });
         if (!response.ok) {
             const errData = await response.json();
             throw new Error(errData.error || `HTTP error ${response.status}`);
         }
         currentAIPuzzle = await response.json();
-        console.log("AI Puzzle received:", currentAIPuzzle);
         currentRiddleIndex++;
         displayAIPuzzle();
     } catch (error) {
-        console.error("Error fetching AI puzzle:", error.message);
-        alert(`Failed to fetch AI puzzle: ${error.message}. Check backend logs.`);
+        alert(`Failed to fetch AI puzzle: ${error.message}.`);
         goBackToLanding();
     }
 }
@@ -394,6 +337,16 @@ function displayAIPuzzle() {
         return;
     }
 
+    // helper function to un-escape HTML entities
+    const unEscapeHtml = (safe) => {
+        if (typeof safe !== 'string') return '';
+        return safe.replace(/&lt;/g, '<')
+                   .replace(/&gt;/g, '>')
+                   .replace(/&quot;/g, '"')
+                   .replace(/&#039;/g, "'")
+                   .replace(/&amp;/g, '&');
+    };
+
     const riddleNumberText = `AI Riddle #${currentRiddleIndex}`;
     const difficultyDisplay = currentAIPuzzle.difficulty.toUpperCase();
     const domainDisplay = currentAIPuzzle.domain.toUpperCase();
@@ -402,79 +355,128 @@ function displayAIPuzzle() {
     // --- Riddle Section ---
     const riddleSection = document.createElement('div');
     riddleSection.classList.add('riddle-section');
-    riddleSection.style.marginBottom = '20px'; // Add some space before the answer section
+    riddleSection.style.marginTop = '0';
+    riddleSection.style.marginBottom = '0';
 
-    let puzzleDescriptionHtml = currentAIPuzzle.puzzle_description;
+    // Using a more robust method to render markdown-like text to HTML
+    let puzzleDescriptionHtml = unEscapeHtml(currentAIPuzzle.puzzle_description || '');
+    // Process code blocks first to protect them from other markdown conversions
+    const codeBlocks = [];
+    puzzleDescriptionHtml = puzzleDescriptionHtml.replace(/```([\s\S]*?)```/g, (match, code) => {
+        const placeholder = `__CODEBLOCK_${codeBlocks.length}__`;
+        codeBlocks.push(escapeHtml(code.trim()));
+        return placeholder;
+    });
+    // Process other markdown elements
     puzzleDescriptionHtml = puzzleDescriptionHtml
-        .replace(/```(?:([\w-]+)\n)?([\s\S]*?)```/g, (match, lang, code) => `<pre class="line-numbers language-${lang || 'unknown'}"><code class="language-${lang || 'unknown'}">${escapeHtml(code.trim())}</code></pre>`)
         .replace(/`([^`]+)`/g, (match, code) => `<code>${escapeHtml(code)}</code>`)
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/^(#{1,6}) (.*$)/gim, (match, hashes, content) => `<h${hashes.length}>${escapeHtml(content)}</h${hashes.length}>`)
+        .replace(/^(#{1,6}) (.*$)/gim, (match, hashes, content) => `<h${hashes.length + 1}>${escapeHtml(content)}</h${hashes.length + 1}>`)
         .replace(/\n/g, '<br>');
+    // Restore code blocks
+    codeBlocks.forEach((code, index) => {
+        const lang = "unknown"; // You could try to detect language if needed
+        puzzleDescriptionHtml = puzzleDescriptionHtml.replace(`__CODEBLOCK_${index}__`, `<pre class="language-${lang}"><code class="language-${lang}">${code}</code></pre>`);
+    });
 
     riddleSection.innerHTML = `
         <h2>${riddleNumberText} :: ${domainDisplay} PATH :: ${difficultyDisplay} PROTOCOL ::</h2>
         <div class="riddle-text">${puzzleDescriptionHtml}</div>
     `;
 
-    // --- Answer Input Section (similar to tester.html) ---
+    // --- Answer Input Section ---
     const answerSection = document.createElement('div');
-    answerSection.classList.add('riddle-section'); // Use same styling for consistency
-    answerSection.style.marginTop = '0'; // Remove top margin if riddleSection has bottom margin
+    answerSection.classList.add('riddle-section');
+    answerSection.style.marginTop = '15px';
 
+    // skip buttons
     answerSection.innerHTML = `
         <h2>> Submit Your Answer_</h2>
         <div class="form-group" style="margin-top:15px;">
             <label for="aiAnswerInput">> Your Answer:</label>
-            <textarea id="aiAnswerInput" class="answer-input" rows="6" placeholder="Enter your code or detailed answer here..." style="width: 100%; min-height: 100px; background-color: rgba(0,0,0,0.1); border: 1px solid #00FF00; color: #00FF00; padding: 8px; font-family: 'VT323', monospace; font-size: 16px; margin-top: 5px;"></textarea>
+            <textarea id="aiAnswerInput" class="answer-input" rows="15" placeholder="Enter your code or detailed answer here..." style="width: 100%; min-height: 100px; background-color: rgba(0,0,0,0.1); border: 1px solid #00FF00; color: #00FF00; padding: 8px; font-family: 'VT323', monospace; font-size: 16px; margin-top: 5px;"></textarea>
         </div>
-        <div class="button-container" style="margin-top: 15px;">
-            <button onclick="checkAnswer(false, true)" class="submit-button">> Submit Answer_</button>
-            <button onclick="goBackToLanding(true)" class="back-button" style="margin-left: 10px;">> Abort Sequence_</button>
+        <div class="button-container" style="margin-top: 15px; display: flex; justify-content: space-between; flex-wrap: wrap;">
+            <div>
+                <button onclick="checkAnswer(false, true)" class="submit-button">> Submit Answer_</button>
+                <button onclick="goBackToLanding(true)" class="back-button" style="margin-left: 10px;">> Abort Sequence_</button>
+            </div>
+            <div>
+                 <button onclick="skipRiddle(true)" class="submit-button" style="background-color: #5a5a00;">> Save & Skip Riddle_</button>
+                 <button onclick="skipRiddle(false)" class="back-button" style="margin-left: 10px;">> Skip Riddle_</button>
+            </div>
         </div>
     `;
 
-    // --- Result Display Section (initially hidden or with placeholder) ---
+    // --- Result Display Section ---
     const resultSection = document.createElement('div');
-    resultSection.id = 'aiResultDisplaySection'; // New ID for this section
-    resultSection.classList.add('riddle-section'); // Style like other sections
-    resultSection.style.marginTop = '20px';
+    resultSection.id = 'aiResultDisplaySection';
+    resultSection.classList.add('riddle-section');
+    resultSection.style.marginTop = '15px';
     resultSection.innerHTML = `
         <h2>> Result_</h2>
         <div id="aiFeedbackArea" class="feedback neutral" style="min-height: 40px; padding: 10px;">:: Awaiting your submission ::</div>
+        <div id="aiHintButtonContainer" style="margin-top: 10px;"></div>
         <div id="aiHintArea" class="feedback neutral" style="display: none; margin-top: 10px; padding: 10px;"></div>
     `;
 
     // Clear riddleArea and append new sections
-    riddleArea.innerHTML = timerDisplayHtml; // Start with timer
+    riddleArea.innerHTML = timerDisplayHtml;
     riddleArea.appendChild(riddleSection);
     riddleArea.appendChild(answerSection);
     riddleArea.appendChild(resultSection);
-
-
-    // **DEBUG LOG**: Verify aiFeedbackArea exists immediately after appending
-    const testFeedbackArea = document.getElementById('aiFeedbackArea');
-    if (testFeedbackArea) {
-        console.log("displayAIPuzzle: 'aiFeedbackArea' successfully found in DOM after creation.");
-    } else {
-        console.error("displayAIPuzzle: CRITICAL - 'aiFeedbackArea' NOT found in DOM immediately after creation. Check append logic or IDs.");
-        console.log("Current innerHTML of riddleArea:", riddleArea.innerHTML); // Log the structure
-    }
 
     const answerInput = document.getElementById('aiAnswerInput');
     if (answerInput) {
         answerInput.focus();
     }
 
-    if (typeof speechEnabled !== 'undefined' && speechEnabled && typeof speakText === 'function') {
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = currentAIPuzzle.puzzle_description;
-        const textToSpeak = tempDiv.textContent || tempDiv.innerText || "";
-        speakText(`AI Riddle ${currentRiddleIndex}. ${textToSpeak}`);
-    }
     if (typeof Prism !== 'undefined') {
         Prism.highlightAllUnder(riddleArea);
+    }
+}
+
+// Function to handle skipping riddles
+async function skipRiddle(saveProgress) {
+    if (!currentAIPuzzle || !currentPlayerId) {
+        alert("System error: Cannot skip riddle without session data.");
+        return;
+    }
+
+    const feedbackArea = document.getElementById('aiFeedbackArea');
+    if(feedbackArea) {
+        feedbackArea.className = 'feedback neutral';
+        feedbackArea.textContent = ':: Skipping puzzle... Requesting new calibration sequence... ::';
+    }
+
+    try {
+        const response = await fetch('/api/skip_puzzle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                player_id: currentPlayerId,
+                puzzle_id: currentAIPuzzle.puzzle_id,
+                save_progress: saveProgress
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || "Server responded with an error.");
+        }
+
+        console.log(`Riddle ${currentAIPuzzle.puzzle_id} skipped. Fetching next puzzle.`);
+
+        // Pass the ID of the just-skipped puzzle to exclude it from the next search
+        await fetchAndDisplayAIPuzzle(currentAIPuzzle.domain, currentAIPuzzle.difficulty, currentAIPuzzle.puzzle_id);
+
+    } catch (error) {
+        alert(`Error skipping puzzle: ${error.message}`);
+        if(feedbackArea) {
+            feedbackArea.className = 'feedback incorrect';
+            feedbackArea.textContent = `:: Error: Could not skip puzzle. ::`;
+        }
     }
 }
 
@@ -483,7 +485,6 @@ function displayAIPuzzle() {
  * @param {boolean} [isFinal=false] - Whether this is for a final challenge riddle.
  * @param {boolean} [isAI=false] - Whether this is for an AI-generated puzzle.
  */
-// This is the function that should be in your game-logic.js
 async function checkAnswer(isFinal = false, isAI = false) {
     console.log(`Checking answer. Is Final: ${isFinal}, Is AI: ${isAI}. Attempting to find feedback ID: ${isAI ? 'aiFeedbackArea' : 'feedbackArea'}`);
 
@@ -497,12 +498,6 @@ async function checkAnswer(isFinal = false, isAI = false) {
 
     if (!feedbackArea) {
         console.error(`Feedback area element with ID '${feedbackAreaId}' not found!`);
-        const riddleDisplayElement = document.getElementById('riddleDisplay');
-        if (riddleDisplayElement) {
-            console.log("Content of #riddleDisplay at time of error:", riddleDisplayElement.innerHTML);
-        } else {
-            console.error("#riddleDisplay element itself not found!");
-        }
         return;
     }
     if (!answerInputElement) {
@@ -521,7 +516,7 @@ async function checkAnswer(isFinal = false, isAI = false) {
         return;
     }
 
-    if (isAI) { // Logic for AI-generated puzzles
+    if (isAI) {
         if (!currentAIPuzzle || !currentPlayerId) {
             console.error("Cannot check AI answer: Puzzle data or player ID missing.");
             feedbackArea.textContent = ":: System Error: Session data lost. ::";
@@ -535,10 +530,13 @@ async function checkAnswer(isFinal = false, isAI = false) {
 
         feedbackArea.textContent = ":: Validating input sequence... ::";
         feedbackArea.className = 'feedback neutral';
+
+        const hintButtonContainer = document.getElementById('aiHintButtonContainer');
+        if (hintButtonContainer) hintButtonContainer.innerHTML = '';
         if (hintArea) hintArea.style.display = 'none';
 
         try {
-            const response = await fetch('http://localhost:5000/validate_answer', {
+            const response = await fetch('http://localhost:8000/validate_answer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -558,10 +556,9 @@ async function checkAnswer(isFinal = false, isAI = false) {
 
             if (!result.correct) {
                 let corruptionLevel = 0;
-                // Check for global completionStatus or define a way to get this
                 if (typeof completionStatus !== 'undefined' && completionStatus.easy && completionStatus.hard) {
-                    const easyFinalComplete = localStorage.getItem('enigmaEasyFinalComplete') === 'true'; // Or derive from completionStatus.easy.final etc.
-                    const hardFinalComplete = localStorage.getItem('enigmaHardFinalComplete') === 'true'; // Or derive from completionStatus.hard.final etc.
+                    const easyFinalComplete = localStorage.getItem('enigmaEasyFinalComplete') === 'true';
+                    const hardFinalComplete = localStorage.getItem('enigmaHardFinalComplete') === 'true';
 
                     if (hardFinalComplete) {
                         corruptionLevel = 2;
@@ -573,14 +570,14 @@ async function checkAnswer(isFinal = false, isAI = false) {
                 }
 
 
-                let commentOptions = enigmaCoreStingyComments.level0; // Default
-                if (corruptionLevel === 1 && enigmaCoreStingyComments.level1 && enigmaCoreStingyComments.level1.length > 0) {
+                let commentOptions = enigmaCoreStingyComments.level0;
+                if (corruptionLevel === 1 && enigmaCoreStingyComments.level1?.length > 0) {
                     commentOptions = enigmaCoreStingyComments.level1;
-                } else if (corruptionLevel === 2 && enigmaCoreStingyComments.level2 && enigmaCoreStingyComments.level2.length > 0) {
+                } else if (corruptionLevel === 2 && enigmaCoreStingyComments.level2?.length > 0) {
                     commentOptions = enigmaCoreStingyComments.level2;
                 }
 
-                if (commentOptions && commentOptions.length > 0) { // Check if commentOptions is valid
+                if (commentOptions?.length > 0) {
                     enigmaComment = commentOptions[Math.floor(Math.random() * commentOptions.length)];
                     finalFeedback += `<br>${enigmaComment}`;
                 } else {
@@ -601,12 +598,21 @@ async function checkAnswer(isFinal = false, isAI = false) {
                 speakText(textToSpeak);
             }
 
-            if (result.hint && hintArea) {
-                hintArea.innerHTML = `<span style="font-weight:bold;">Hint:</span> ${escapeHtml(result.hint)}`;
-                hintArea.style.display = 'block';
-                hintArea.className = 'feedback neutral';
-            } else if (hintArea) {
-                hintArea.style.display = 'none';
+            if (!result.correct && result.hint && hintButtonContainer) {
+                const hintButton = document.createElement('button');
+                hintButton.textContent = '> Request Hint_';
+                hintButton.className = 'submit-button';
+                hintButton.style.fontSize = '14px';
+                hintButton.style.backgroundColor = '#5a5a00'; // A yellow-ish color
+                hintButton.onclick = () => {
+                    if (hintArea) {
+                        hintArea.innerHTML = `<span style="font-weight:bold;">Hint:</span> ${escapeHtml(result.hint)}`;
+                        hintArea.style.display = 'block';
+                        hintArea.className = 'feedback neutral';
+                        hintButton.style.display = 'none'; // Hide button after use
+                    }
+                };
+                hintButtonContainer.appendChild(hintButton);
             }
 
             if (result.correct) {
@@ -627,7 +633,7 @@ async function checkAnswer(isFinal = false, isAI = false) {
             answerInputElement.disabled = false;
             if(submitButton) submitButton.disabled = false;
         }
-    } else {
+    } else { // This is for standard, non-AI riddles
         if (typeof md5 !== 'function') {
             console.error("md5 function is not defined! Cannot check standard answer.");
             feedbackArea.textContent = ":: System Error :: Hashing function unavailable.";
@@ -903,7 +909,6 @@ function displayRiddle() {
          }
     }
 
-    // Optional: Speak riddle text
     if (typeof speechEnabled !== 'undefined' && speechEnabled && typeof speakText === 'function') {
          if (riddleData.riddle) {
             // Simple text extraction for speech
@@ -917,98 +922,10 @@ function displayRiddle() {
     console.log("Riddle displayed successfully.");
 }
 
-function goBackToLanding(confirmAbort = false) {
-    console.log("goBackToLanding called. Confirm abort:", confirmAbort);
-    if (confirmAbort && typeof startTime !== 'undefined' && startTime) {
-        if (!confirm("Abort current sequence and return to Terminal? Progress will be lost.")) {
-            console.log("Abort cancelled."); return;
-        }
-        console.log("Abort confirmed.");
-    }
-
-    if (typeof timerInterval !== 'undefined' && timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-    if (typeof startTime !== 'undefined') startTime = null;
-    if (typeof finalTimeMs !== 'undefined') finalTimeMs = 0;
-    if (typeof currentMode !== 'undefined') currentMode = null;
-    if (typeof currentDifficulty !== 'undefined') currentDifficulty = null;
-    if (typeof currentRiddleIndex !== 'undefined') currentRiddleIndex = 0;
-    if (typeof currentPlayerId !== 'undefined') currentPlayerId = null;
-    currentAIPuzzle = null;
-
-    const elementsToToggle = {
-        'riddleDisplay': 'none',
-        'entryForm': 'block',
-        'initialHeader': 'block',
-        'landingHintContainer': 'block',
-        'aiDomainSelection': 'none' // Ensure AI domain selection is hidden
-    };
-
-    for (const id in elementsToToggle) {
-        const el = document.getElementById(id);
-        if (el) el.style.display = elementsToToggle[id];
-    }
-
-    // Update visibility of conditional buttons using their dedicated functions
-    if (typeof updateFinalButtonsVisibility === 'function') updateFinalButtonsVisibility();
-    if (typeof updateAccessTerminalButtonVisibility === 'function') updateAccessTerminalButtonVisibility();
-    if (typeof updateNightmareVisibility === 'function') updateNightmareVisibility();
-    if (typeof updateDynamicContentArea === 'function') updateDynamicContentArea();
-
-    const hintArea = document.getElementById('aiHintArea'); // Clear AI hint area
-    if (hintArea) hintArea.style.display = 'none';
-
-    console.log("Returned to landing page.");
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    const modeRadios = document.querySelectorAll('input[name="mode"]');
-    const aiDomainSelectionDiv = document.getElementById('aiDomainSelection');
-
-    if (modeRadios.length > 0 && aiDomainSelectionDiv) {
-        modeRadios.forEach(radio => {
-            radio.addEventListener('change', function() {
-                if (this.value === 'ai_challenge' && this.checked) {
-                    aiDomainSelectionDiv.style.display = 'block';
-                } else {
-                    aiDomainSelectionDiv.style.display = 'none';
-                }
-            });
-        });
-        const initialSelectedMode = document.querySelector('input[name="mode"]:checked');
-        if (initialSelectedMode && initialSelectedMode.value === 'ai_challenge') {
-            aiDomainSelectionDiv.style.display = 'block';
-        } else if (aiDomainSelectionDiv) { // Ensure div exists before trying to hide
-            aiDomainSelectionDiv.style.display = 'none';
-        }
-    } else {
-        console.warn("Could not find mode radio buttons or AI domain selection div for event listener setup.");
-    }
-})
-
-function typewriterEffect(element, text, speed = 30) {
-    return new Promise(resolve => {
-        let i = 0;
-        function type() {
-            if (i < text.length) {
-                // Preserve newlines from the original text
-                if (text.charAt(i) === '\n') {
-                    element.innerHTML += '<br>';
-                } else {
-                    element.innerHTML += text.charAt(i);
-                }
-                i++;
-                setTimeout(type, speed);
-            } else {
-                resolve();
-            }
-        }
-        type();
-    });
-}
-
 
 /**
  * Displays the final challenge riddle (Easy or Hard).
+ * This version adds special effects and a typewriter presentation.
  */
 async function displayFinalRiddle(difficulty) {
     // Ensure state variables are defined
@@ -1021,7 +938,8 @@ async function displayFinalRiddle(difficulty) {
     currentMode = 'final'; // Set mode to final
 
     // Hide main form elements immediately
-    const elementsToHide = ['entryForm', 'initialHeader', 'finalChallengeButtons', 'accessTerminalButton', 'dynamicContentArea'];
+    const elementsToHide = ['standardEntryForm', 'aiEntryForm', 'initialHeader', 'finalChallengeButtons', 'terminalAccessArea', 'dynamicContentArea', 'puzzleArchivesButton'];
+    document.querySelector('.challenge-container').style.display = 'none';
     elementsToHide.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
@@ -1162,9 +1080,6 @@ function handleInteractiveSuccess(successValue) {
 
     } else if (currentRiddleData && currentRiddleData.solutionCheckType !== 'event') {
          console.warn("Interactive success triggered for a non-event riddle type.");
-         // Optionally provide feedback or ignore
-         // feedbackArea.textContent = ":: Signal Received (Unexpected) ::";
-         // feedbackArea.className = 'feedback neutral';
     }
      else {
         // Mismatch in success value or unexpected trigger
@@ -1187,29 +1102,27 @@ function handleModeCompletion() {
          goBackToLanding(); return;
     }
 
-    const completedDifficulty = currentDifficulty.toLowerCase();
+    const completedDifficultyKey = currentDifficulty.toLowerCase();
     const completedMode = currentMode;
-    console.log(`Handling Mode Completion: Diff=${completedDifficulty}, Mode=${completedMode}`);
+    console.log(`Handling Mode Completion: Diff=${completedDifficultyKey}, Mode=${completedMode}`);
 
-    // Stop timer (Ensure timerInterval, startTime, finalTimeMs are defined)
-    if (typeof timerInterval !== 'undefined' && timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-    if (typeof startTime !== 'undefined' && startTime && typeof finalTimeMs !== 'undefined') {
+    // Stop timer
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    if (startTime) {
         const endTime = new Date();
         finalTimeMs = endTime - startTime;
-        startTime = null; // Reset start time
+        startTime = null;
     }
-    console.log(`Mode complete: ${completedDifficulty} ${completedMode}. Time: ${finalTimeMs}ms`);
+    console.log(`Mode complete: ${completedDifficultyKey} ${completedMode}. Time: ${finalTimeMs}ms`);
 
 
     // Update completion status
     let allNightmareComplete = false;
-    // Check structure carefully before accessing
-    if (completionStatus[completedDifficulty] && typeof completionStatus[completedDifficulty][completedMode] === 'boolean') {
-         completionStatus[completedDifficulty][completedMode] = true;
-         saveCompletionStatus(); // Save to localStorage (from game-state.js)
+    if (completionStatus[completedDifficultyKey] && typeof completionStatus[completedDifficultyKey][completedMode] === 'boolean') {
+         completionStatus[completedDifficultyKey][completedMode] = true;
+         saveCompletionStatus();
 
-         // Check if ALL Nightmare modes are now complete (only if current difficulty was nightmare)
-         if (completedDifficulty === 'nightmare' && completionStatus.nightmare) {
+         if (completedDifficultyKey === 'nightmare' && completionStatus.nightmare) {
              allNightmareComplete = completionStatus.nightmare.frontend &&
                                     completionStatus.nightmare.backend &&
                                     completionStatus.nightmare.database;
@@ -1218,29 +1131,27 @@ function handleModeCompletion() {
              }
          }
     } else {
-        console.error(`Error updating completion status: Invalid structure for [${completedDifficulty}][${completedMode}]`, completionStatus);
+        console.error(`Error updating completion status: Invalid structure for [${completedDifficultyKey}][${completedMode}]`, completionStatus);
     }
 
-    // Update UI visibility & effects (Ensure functions are available)
+    // Update UI visibility & effects
     if (typeof updateFinalButtonsVisibility === 'function') updateFinalButtonsVisibility();
     if (typeof updateNightmareVisibility === 'function') updateNightmareVisibility();
     if (typeof applyCorruptionEffect === 'function') applyCorruptionEffect();
-    if (typeof updateDynamicContentArea === 'function') updateDynamicContentArea(); // Update dynamic area
+    if (typeof updateDynamicContentArea === 'function') updateDynamicContentArea();
 
-
-    // Trigger True Ending or Show Standard Completion Message
+    // Trigger True Ending chat if all nightmare modes are complete
     if (allNightmareComplete && typeof startTrueEndingChat === 'function') {
         setTimeout(() => {
-            startTrueEndingChat(); // startTrueEndingChat from chat-sequences.js
-        }, 1000); // Delay before starting chat
+            startTrueEndingChat();
+        }, 1000);
     } else {
-        // Show standard completion message
+        // Show standard completion message if no special chat is triggered
         const riddleArea = document.getElementById('riddleDisplay');
         if (!riddleArea) { console.error("Cannot show completion message: #riddleDisplay not found."); return; }
 
-        // Sanitize mode/difficulty for display
         const safeMode = completedMode.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        const safeDiff = completedDifficulty.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const safeDiff = currentDifficulty.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
         riddleArea.innerHTML = `
             <div class="riddle-section" style="display: block;">
@@ -1255,6 +1166,7 @@ function handleModeCompletion() {
         }
     }
 }
+
 
 /**
  * Handles the completion of a final challenge (Easy or Hard).
@@ -1303,19 +1215,22 @@ function handleFinalCompletion() {
 
 
      // Proceed based on difficulty
-     if (completedFinalDifficulty === 'easy') {
-         console.log("Easy final completed. Redirecting...");
-         if (typeof speechEnabled !== 'undefined' && speechEnabled && typeof speakText === 'function') {
-             speakText("Standard protocol assessment finalized.", 1.0, 1.0);
-         }
-         // Redirect after a very short delay to allow speech to start
-         setTimeout(() => {
-             // Ensure the target file exists and path is correct
-             window.location.href = 'final-easy-complete.html';
-         }, 100);
-         return; // Stop further execution
-
-     } else { // Hard completion -> Show designation prompt
+    if (completedFinalDifficulty === 'easy') {
+        console.log("Easy final completed. Triggering Glitch chat sequence...");
+        if (typeof speechEnabled !== 'undefined' && speechEnabled && typeof speakText === 'function') {
+            speakText("Standard protocol assessment finalized.", 1.0, 1.0);
+        }
+        // Trigger the Glitch chat sequence instead of redirecting.
+        if (typeof startGlitchChat === 'function') {
+            setTimeout(() => {
+                startGlitchChat();
+            }, 1000);
+        } else {
+            console.error("startGlitchChat function not found! Cannot proceed.");
+            // Fallback to original behavior or just go back to landing
+            goBackToLanding();
+        }
+    } else { // Hard completion -> Show designation prompt
          console.log("Hard final completed. Proceeding to designation prompt.");
          if (typeof speechEnabled !== 'undefined' && speechEnabled && typeof speakText === 'function') {
              speakText("Deep scan protocol accepted.", 0.8, 0.7);
@@ -1462,60 +1377,7 @@ function checkDesignation() {
     }
 }
 
-
-/**
- * Returns the user to the landing page/main menu.
- * @param {boolean} [confirmAbort=false] - If true, asks for confirmation if a challenge is active.
- */
-function goBackToLanding(confirmAbort = false) {
-     console.log("goBackToLanding called.");
-
-     // Ensure startTime is defined before checking
-     if (confirmAbort && typeof startTime !== 'undefined' && startTime) {
-         if (!confirm("Abort current sequence and return to Terminal? Progress will be lost.")) {
-              console.log("Abort cancelled."); return; // Stop if user cancels
-         }
-         console.log("Abort confirmed.");
-     }
-
-    // Stop timer if running (Ensure timerInterval is defined)
-    if (typeof timerInterval !== 'undefined' && timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-    }
-
-    // Reset game state variables (Ensure they are defined in game-state.js)
-    if (typeof startTime !== 'undefined') startTime = null;
-    if (typeof finalTimeMs !== 'undefined') finalTimeMs = 0;
-    if (typeof currentMode !== 'undefined') currentMode = null;
-    if (typeof currentDifficulty !== 'undefined') currentDifficulty = null;
-    if (typeof currentRiddleIndex !== 'undefined') currentRiddleIndex = 0;
-
-    // Hide riddle display, show landing elements
-    const riddleDisplay = document.getElementById('riddleDisplay');
-    const entryForm = document.getElementById('entryForm');
-    const initialHeader = document.getElementById('initialHeader');
-    const landingHint = document.getElementById('landingHintContainer');
-
-    if (riddleDisplay) riddleDisplay.style.display = 'none';
-    if (entryForm) entryForm.style.display = 'block'; else console.warn("goBackToLanding: #entryForm not found.");
-    if (initialHeader) initialHeader.style.display = 'block'; else console.warn("goBackToLanding: #initialHeader not found.");
-    if (landingHint) landingHint.style.display = 'block'; // Assuming it should always show on landing
-
-    // Update UI visibility for buttons etc. (Ensure functions are available)
-    if (typeof updateFinalButtonsVisibility === 'function') updateFinalButtonsVisibility();
-    if (typeof updateAccessTerminalButtonVisibility === 'function') updateAccessTerminalButtonVisibility();
-    if (typeof updateNightmareVisibility === 'function') updateNightmareVisibility();
-    if (typeof updateDynamicContentArea === 'function') updateDynamicContentArea(); // Show dynamic area again
-
-    console.log("Returned to landing page.");
-}
-
 // --- Utility Functions ---
-
-// escapeHtmlAttribute moved to ui-manager.js or defined globally
-
-// --- Get Riddle Data Functions --- (Needed by core logic)
 
 /** Gets the riddle set for the current mode and difficulty. */
 function getCurrentRiddles() {

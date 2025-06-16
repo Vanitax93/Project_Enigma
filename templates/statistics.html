@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enigma Stats :: Operative Report</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        .stats-container {
+            width: 90%;
+            max-width: 800px;
+            margin: 40px auto;
+            border: 1px solid #00FF00;
+            padding: 25px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+            background: #0D0D0D;
+        }
+        .stats-container h1 {
+            border-bottom: 1px dashed rgba(0, 255, 0, 0.5);
+            padding-bottom: 10px;
+            text-align: center;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 5px;
+            border-bottom: 1px dotted rgba(0, 255, 0, 0.2);
+        }
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+        .stat-label {
+            color: #aaa;
+        }
+        .stat-value {
+            color: #00FF00;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .stat-group {
+            margin-top: 20px;
+            border: 1px solid rgba(0,255,0,0.3);
+            padding: 15px;
+        }
+        .stat-group h2 {
+            margin-top: 0;
+            font-size: 1.1em;
+            color: #ccc;
+            border-bottom: none;
+        }
+        #error-message {
+            color: #FF4500;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="stats-container">
+        <h1 class="glitch" data-text=":: Operative Statistics ::">:: Operative Statistics ::</h1>
+        <div id="stats-content">
+            <div class="stat-item">
+                <span class="stat-label">> Operative Handle:</span>
+                <span id="username-display" class="stat-value">Loading...</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">> Member Since:</span>
+                <span id="member-since" class="stat-value">Loading...</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">> Hints Received:</span>
+                <span id="hints-received" class="stat-value">0</span>
+            </div>
+            <!-- ADDED: New stat item for found passwords -->
+            <div class="stat-item">
+                <span class="stat-label">> Intel Dossiers Unlocked:</span>
+                <span id="passwords-found" class="stat-value">0 / 6</span>
+            </div>
+
+            <div class="stat-group">
+                <h2>Standard Puzzles Solved</h2>
+                <div class="stat-item">
+                    <span class="stat-label">> Frontend Path:</span>
+                    <span id="frontend-solved" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">> Backend Path:</span>
+                    <span id="backend-solved" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">> Database Path:</span>
+                    <span id="database-solved" class="stat-value">0</span>
+                </div>
+            </div>
+
+            <div class="stat-group">
+                <h2>AI Sandbox Puzzles</h2>
+                <div class="stat-item">
+                    <span class="stat-label">> AI Calibrations Solved:</span>
+                    <span id="ai-solved" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">> AI Puzzles Archived:</span>
+                    <span id="skipped-ai-puzzles" class="stat-value">0</span>
+                </div>
+            </div>
+        </div>
+        <div id="error-message" style="display: none;"></div>
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="javascript:window.close();" class="back-button" style="text-decoration: none;">[ Close Dossier ]</a>
+        </div>
+    </div>
+
+    <script src="/static/js/main/statistics.js"></script>
+</body>
+</html>

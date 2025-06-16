@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enigma Archives :: Saved Puzzles</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        .archives-container {
+            width: 90%;
+            max-width: 900px;
+            margin: 40px auto;
+            border: 1px solid #00FF00;
+            padding: 25px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+            background: #0D0D0D;
+        }
+        .archives-container h1 {
+            border-bottom: 1px dashed rgba(0, 255, 0, 0.5);
+            padding-bottom: 10px;
+            text-align: center;
+        }
+        .puzzle-list {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+        .puzzle-item {
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .puzzle-details {
+            flex-grow: 1;
+        }
+        .puzzle-details span {
+            display: block;
+            color: #ccc;
+        }
+        .puzzle-details strong {
+            color: #00FF00;
+        }
+        .puzzle-actions {
+            margin-top: 10px;
+        }
+        #error-message, #loading-message {
+            color: #FF4500;
+            text-align: center;
+            font-size: 1.2em;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="archives-container">
+        <h1 class="glitch" data-text=":: AI Puzzle Archives ::">:: AI Puzzle Archives ::</h1>
+        <div id="archives-content">
+            <p style="text-align: center; color: #aaa;">:: Reviewing saved puzzle states. Stand by... ::</p>
+            <div id="loading-message">Loading archived puzzles...</div>
+            <ul id="puzzle-list" class="puzzle-list">
+                <!-- Puzzles will be dynamically inserted here -->
+            </ul>
+            <div id="error-message" style="display: none;"></div>
+        </div>
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="/enigma" class="back-button" style="text-decoration: none;">[ Return to Calibration ]</a>
+        </div>
+    </div>
+
+    <script src="/static/js/main/retry_puzzle.js"></script>
+</body>
+</html>

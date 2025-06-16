@@ -105,7 +105,23 @@ body.corruption-level-2 @keyframes blink {
     70% { opacity: 0.98; }
 }
 
-/* >> ADDED/ENSURE EXIST: Audio Wave Animation << */
+/* Highlight Animation for Intro */
+@keyframes highlight-transmission {
+    0% {
+        text-shadow: 0 0 5px rgba(0, 255, 0, 0.5), 0 0 10px rgba(0, 255, 0, 0.4);
+        color: #00FF00;
+    }
+    50% {
+        text-shadow: 0 0 10px #0f0, 0 0 20px #0f0, 0 0 35px #0f0;
+        color: #99ff99;
+    }
+    100% {
+        text-shadow: 0 0 5px rgba(0, 255, 0, 0.5), 0 0 10px rgba(0, 255, 0, 0.4);
+        color: #00FF00;
+    }
+}
+
+/* >> Audio Wave Animation << */
 @keyframes audio-wave {
     0% { transform: scaleY(0.3); background-color: #008F00; }
     50% { transform: scaleY(1.0); background-color: #00FF00; }
@@ -189,7 +205,16 @@ body.corruption-level-1 .terminal-container { border-color: #8A2BE2; box-shadow:
 body.corruption-level-2 .terminal-container { border-color: #FF4500; box-shadow: 0 0 25px rgba(255, 69, 0, 0.5); }
 
 header { margin-bottom: 20px; display: block; } /* Ensure header is block */
-main { display: block; } /* Ensure main is block */
+main {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 50vh;
+    transition: min-height 0.4s ease-in-out;
+}
+#riddleDisplay {
+    width: 100%;
+}
 footer { margin-top: 30px; border-top: 1px dashed rgba(0, 255, 0, 0.5); padding-top: 10px; font-size: 14px; display: flex; justify-content: space-between; align-items: center; transition: border-color 1s ease-in-out; }
 footer div { display: flex; flex-wrap: wrap; gap: 10px; }
 footer p { transition: color 1s ease-in-out; }
@@ -237,13 +262,28 @@ body.corruption-level-2 h1, body.corruption-level-2 .flicker-strong { color: #FF
     text-shadow: 0 0 3px #00FFaa; cursor: help;
     position: relative; animation: glitch-word-anim 8s infinite steps(1);
 }
-
+/* Animation class for the intro */
+.highlight-transmission-anim {
+    animation: highlight-transmission 1.5s ease-in-out 2; /* Run the animation twice */
+}
 /* --- Form Elements --- */
 #entryForm {
-    display: block; /* Ensure form itself is block */
-    width: 100%; /* Take available width */
+    display: block;
+    width: 100%;
+}
+#handleInputContainer {
+
+    align-items: center;
 }
 
+#handleInputContainer label {
+    margin-bottom: 0;
+    margin-right: 5px;
+}
+
+#handleInputContainer #candidateName {
+    flex-grow: 1;
+}
 .form-group { margin-bottom: 20px; }
 .form-group p { transition: color 1s ease-in-out; }
 body.corruption-level-1 .form-group p { color: #9370DB; }
@@ -429,7 +469,7 @@ body.corruption-level-1 #chatTypingIndicator { color: #aaa; } /* Keep typing ind
 body.corruption-level-2 #chatTypingIndicator { color: #bbb; }
 
 
-/* >> ADDED: Audio Log Playback Styles (for dynamic content area) << */
+/* Audio Log Playback Styles (for dynamic content area) */
 .audio-control-button {
     display: inline-block;
     background-color: transparent;
@@ -501,6 +541,53 @@ body.corruption-level-2 .audio-playing-indicator span { background-color: #FF634
 .audio-playing-indicator.playing span:nth-child(2) { animation-delay: 0.2s; }
 .audio-playing-indicator.playing span:nth-child(3) { animation-delay: 0.4s; }
 .audio-playing-indicator.playing span:nth-child(4) { animation-delay: 0.6s; }
-/* >> END ADDED AUDIO STYLES << */
 
-/* Add any other specific styles needed */
+.challenge-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 20px;
+    align-items: stretch;
+}
+.challenge-box {
+    flex: 1;
+    min-width: 300px;
+    border: 1px dashed rgba(0, 255, 0, 0.4);
+    padding: 20px;
+    background: rgba(0, 15, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+.challenge-box h2 {
+    margin-top: 0;
+    font-size: 20px;
+    color: #00FF00;
+    border-bottom: 1px solid rgba(0, 255, 0, 0.6);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    flex-shrink: 0;
+}
+.challenge-container, #riddleDisplay {
+    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+}
+
+.view-hidden {
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+}
+
+.view-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.challenge-box form {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+

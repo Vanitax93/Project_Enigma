@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project: Enigma - Initiation</title>
+    <link rel="stylesheet" href="/static/css/landing.css">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- FIX: Moved h1 outside of the container to give it a fixed position -->
+    <h1 id="main-title" class="hidden">Project: Enigma</h1>
+
+    <div class="container">
+        <!-- All dynamic content remains in the container -->
+        <p id="initial-subtitle" class="hidden">Welcome, Candidate. Your digital footprint led you here.</p>
+
+        <!-- Part 2: Handle Input -->
+        <div id="handle-input-container" class="form-group hidden">
+            <label for="candidateName">> Enter Handle:</label>
+            <input type="text" id="candidateName" name="candidateName" required autocomplete="off">
+            <span class="cursor">_</span>
+        </div>
+
+        <!-- Part 3: Post-Handle Entry Content (all hidden initially) -->
+        <div id="post-handle-section" class="hidden">
+            <!-- This will be populated by JavaScript with the personalized, non-animated message -->
+            <p id="personalized-welcome"></p>
+            <!-- This new paragraph will be populated with the animated "Prove your worth" line -->
+            <p id="prove-worth-prompt"></p>
+
+            <div class="button-container">
+                <div id="transmission-controls" class="transmission-controls">
+                    <a href="/introduction" target="_blank" class="submit-button" style="text-decoration: none;">> View Transmission_</a>
+                    <div class="audio-controls">
+                        <button id="intro-audio-button" class="audio-control-button" title="Play Introduction Audio">[ Play Audio ]</button>
+                        <span id="intro-audio-indicator" class="audio-playing-indicator">
+                            <span></span><span></span><span></span><span></span>
+                        </span>
+                        <audio id="intro-audio-player" src="/static/assets/audio/Introduction.wav" preload="metadata"></audio>
+                    </div>
+                </div>
+                <a href="/enigma" id="proceed-button" class="submit-button hidden" style="text-decoration: none;">> Access Enigma_</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/main/landing.js"></script>
+</body>
+</html>

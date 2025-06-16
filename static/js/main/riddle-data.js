@@ -170,7 +170,7 @@ const allRiddles = {
     finalRiddles: {
         easy: { // Rewritten Final Easy Riddle
             riddle: "Initiating Employee Integration Protocol...\nSignal fragmented. Recovery required.\n\nSegment Alpha: `VGhlIGtleSBpcyBoaWRkZW4gd2l0aGluIGEgc2liLINGLCBidXQgb25seSBvbmUgc3BlYWtzIHRydWUu`\n\nDecode Segment Alpha. The message reveals the location of Segment Beta within this very transmission's structure. Segment Beta holds the final component.\n\nCombine the components. What concept represents the unwinding of a self-referential process to reach a base state?",
-            interactiveElement: `<span id="segment-beta-location" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;"><span data-sibling="false">Ignore Me</span><span data-sibling="true" style="color: transparent; user-select: none;">unwound</span><span data-sibling="false">Ignore Me Too</span></span><div style="margin-top:10px; font-size: 14px; color: #888;">(Hint: Use an online Base64 decoder for Segment Alpha. Then use your browser's 'Inspect Element' tool on this page.)</div>`,
+            interactiveElement: `<span id="segment-beta-location" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;"><span data-sibling="false">Ignore Me</span><span data-sibling="true" style="color: transparent; user-select: none;">unwound</span><span data-sibling="false">Ignore Me Too</span></span><div style="margin-top:10px; font-size: 14px; color: #888;"></div>`,
             setupScript: null,
             solutionCheckType: 'input',
             answerHashes: answersHashed.final.easy[0],

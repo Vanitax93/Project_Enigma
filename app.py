@@ -3,6 +3,7 @@ from openai import OpenAI
 from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func, case
 from dotenv import load_dotenv
 import logging
 import json
@@ -35,6 +36,15 @@ DB_NAME = "enigma_progress.db"
 VALID_DOMAINS = ["Frontend", "Backend", "Database", "AI Engineering"]
 VALID_DIFFICULTIES = ["Easy", "Medium", "Hard"]
 HINT_REQUEST_THRESHOLD = 3
+FINDABLE_ACCOUNTS = [
+    "guest",
+    "architect",
+    "lpetrova",
+    "athorne",
+    "master_student",
+    "gl1tch",
+]
+
 
 # --- Database Configuration ---
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_NAME}"
@@ -150,6 +160,20 @@ class PlayerProgress(db.Model):
             "solved_at": self.solved_at.isoformat() if self.solved_at else None,
             "hint_available": bool(self.hint_text),
         }
+
+
+# Database model to track found passwords
+class FoundCredential(db.Model):
+    __tablename__ = "FoundCredentials"
+    id = db.Column(db.Integer, primary_key=True)
+    player_id = db.Column(
+        db.Integer, db.ForeignKey("Players.player_id"), nullable=False, index=True
+    )
+    found_username = db.Column(db.String(80), nullable=False)
+    found_at = db.Column(db.DateTime, default=datetime.utcnow)
+    __table_args__ = (
+        db.UniqueConstraint("player_id", "found_username", name="_player_found_uc"),
+    )
 
 
 # --- Helper Functions ---
@@ -437,9 +461,16 @@ def home():
     return jsonify({"status": "Backend server is running!"}), 200
 
 
-# Returns a simple status message indicating the server is running
+# Route for the landing page
 @app.route("/")
-def index():
+def landing_page():
+    """Serves the animated landing page."""
+    return render_template("landing.html")
+
+
+# Route for the main application
+@app.route("/enigma")
+def enigma_home():
     """Serves the main game page."""
     return render_template("index.html")
 
@@ -450,16 +481,19 @@ def terminal():
     return render_template("terminal.html")
 
 
-# Add routes for other HTML files if needed
 @app.route("/final-easy-complete")
 def final_easy_complete():
-    # You would create a final-easy-complete.html in the templates folder
     return render_template("final-easy-complete.html")
 
 
 @app.route("/final-hard-complete")
 def final_hard_complete():
     return render_template("final-hard-complete.html")
+
+
+@app.route("/retry_puzzle")
+def retry_puzzle():
+    return render_template("retry_puzzle.html")
 
 
 @app.route("/personnel/dr-thorne")
@@ -568,27 +602,32 @@ def register_player():
     email = data["email"].strip().lower()
     password = data["password"]
 
-    if not username or not email or not password:
-        return jsonify({"error": "Username, email, and password cannot be empty"}), 400
-    if len(password) < 6:
-        return jsonify({"error": "Password must be at least 6 characters long"}), 400
-    if "@" not in email or "." not in email.split("@")[-1]:
-        return jsonify({"error": "Invalid email format"}), 400
+    if (
+        not username
+        or not email
+        or not password
+        or len(password) < 6
+        or "@" not in email
+        or "." not in email.split("@")[-1]
+    ):
+        return jsonify({"error": "Invalid registration data"}), 400
 
     if Player.query.filter_by(username=username).first():
         return jsonify({"error": f"Username '{username}' is already taken"}), 409
     if Player.query.filter_by(email=email).first():
         return jsonify({"error": f"Email '{email}' is already registered"}), 409
 
-    # Default terminal_access_level for new registered users
-    new_player = Player(username=username, email=email, terminal_access_level="unit734")
+    # Set the access level to 'registered_user' to match frontend logic
+    new_player = Player(
+        username=username, email=email, terminal_access_level="registered_user"
+    )
     new_player.set_password(password)
 
     try:
         db.session.add(new_player)
         db.session.commit()
         logging.info(
-            f"Registered new player: {new_player.username} (ID: {new_player.player_id}), Terminal Access: {new_player.terminal_access_level}"
+            f"Registered new player: {new_player.username}, Access Level: {new_player.terminal_access_level}"
         )
         return (
             jsonify(
@@ -603,10 +642,6 @@ def register_player():
         db.session.rollback()
         logging.exception(f"Database error registering player '{username}': {e}")
         return jsonify({"error": "Database error during registration"}), 500
-    except Exception as e:
-        db.session.rollback()
-        logging.exception(f"Unexpected error registering player '{username}': {e}")
-        return jsonify({"error": "Internal server error during registration"}), 500
 
 
 # Authenticates a player using username and password for terminal login
@@ -638,6 +673,121 @@ def login_player():
     else:
         logging.warning(f"Login failed for username '{username}'.")
         return jsonify({"error": "Invalid username or password"}), 401
+
+
+@app.route("/statistics")
+def statistics_page():
+    return render_template("statistics.html")
+
+
+@app.route("/api/statistics/<string:username>", methods=["GET"])
+def get_player_statistics(username):
+    try:
+        player = Player.query.filter_by(username=username).first()
+        if not player:
+            return jsonify({"error": "Player not found"}), 404
+
+        # Query for puzzle stats
+        progress_stats = (
+            db.session.query(
+                func.count(PlayerProgress.progress_id).label("total_solved"),
+                func.sum(case((Puzzle.is_ai_generated == True, 1), else_=0)).label(
+                    "ai_solved"
+                ),
+                func.sum(case((Puzzle.domain == "frontend", 1), else_=0)).label(
+                    "frontend_solved"
+                ),
+                func.sum(case((Puzzle.domain == "backend", 1), else_=0)).label(
+                    "backend_solved"
+                ),
+                func.sum(case((Puzzle.domain == "database", 1), else_=0)).label(
+                    "database_solved"
+                ),
+                func.count(PlayerProgress.hint_text).label("hints_used"),
+            )
+            .join(Puzzle)
+            .filter(
+                PlayerProgress.player_id == player.player_id,
+                PlayerProgress.status == "solved",
+            )
+            .first()
+        )
+
+        # ADDED: Query for skipped AI puzzles
+        skipped_ai_puzzles = (
+            PlayerProgress.query.join(Puzzle)
+            .filter(
+                PlayerProgress.player_id == player.player_id,
+                PlayerProgress.status == "skipped",
+                Puzzle.is_ai_generated == True,
+            )
+            .count()
+        )
+
+        # UPDATED: Query for found passwords
+        passwords_found_count = FoundCredential.query.filter_by(
+            player_id=player.player_id
+        ).count()
+
+        stats = {
+            "username": player.username,
+            "member_since": player.created_at.isoformat(),
+            "ai_puzzles_solved": progress_stats.ai_solved or 0,
+            "skipped_ai_puzzles": skipped_ai_puzzles,  # ADDED
+            "hints_received": progress_stats.hints_used or 0,
+            "standard_puzzles_solved": {
+                "frontend": progress_stats.frontend_solved or 0,
+                "backend": progress_stats.backend_solved or 0,
+                "database": progress_stats.database_solved or 0,
+            },
+            "passwords_found": passwords_found_count,  # ADDED
+        }
+
+        return jsonify(stats), 200
+
+    except Exception as e:
+        logging.exception(f"Error fetching statistics for player '{username}': {e}")
+        return jsonify({"error": "Internal server error fetching statistics"}), 500
+
+
+# Endpoint to record a found password
+@app.route("/api/record_found_credential", methods=["POST"])
+def record_found_credential():
+    data = request.get_json()
+    if not data or "username" not in data or "found_account" not in data:
+        return jsonify({"error": "Missing username or found_account"}), 400
+
+    username = data["username"]
+    found_account = data["found_account"]
+
+    player = Player.query.filter_by(username=username).first()
+    if not player:
+        return jsonify({"error": "Primary player not found"}), 404
+
+    # Check if this account is a findable one
+    if found_account.lower() not in FINDABLE_ACCOUNTS:
+        return jsonify({"message": "Account not trackable."}), 200
+
+    # Check if already recorded
+    existing = FoundCredential.query.filter_by(
+        player_id=player.player_id, found_username=found_account
+    ).first()
+    if existing:
+        return jsonify({"message": "Credential already recorded"}), 200
+
+    # Record the new credential
+    new_found = FoundCredential(
+        player_id=player.player_id, found_username=found_account
+    )
+    db.session.add(new_found)
+    try:
+        db.session.commit()
+        logging.info(f"Player '{username}' found credential for '{found_account}'.")
+        return jsonify({"message": "Credential recorded successfully"}), 201
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logging.error(f"DB Error recording credential for {username}: {e}")
+        return jsonify({"error": "Database error"}), 500
 
 
 # Retrieves player data by player ID
@@ -701,149 +851,177 @@ def get_player_by_username(username):
 @app.route("/generate_puzzle", methods=["POST"])
 def generate_puzzle():
     if ai_client is None:
-        logging.error("AI client (OpenAI) not initialized.")
         return jsonify({"error": "AI service is unavailable"}), 503
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "Missing JSON payload"}), 400
-        domain, difficulty = data.get("domain"), data.get("difficulty")
-        if domain not in VALID_DOMAINS or difficulty not in VALID_DIFFICULTIES:
-            return jsonify({"error": "Invalid domain or difficulty"}), 400
-    except Exception as e:
-        logging.exception("Error parsing generate_puzzle request.")
-        return jsonify({"error": "Invalid JSON payload"}), 400
 
-    prompt_content = get_puzzle_generation_prompt(domain, difficulty)
-    logging.debug(
-        f"--- Sending Puzzle Prompt to OpenAI (Model: {OPENAI_MODEL_NAME}, Temp: {GENERATION_TEMPERATURE}) ---:\nUser Message: {prompt_content[:800]}...\n---"
+    data = request.get_json()
+    player_id = data.get("player_id")
+    domain = data.get("domain")
+    difficulty = data.get("difficulty")
+    exclude_puzzle_id = data.get(
+        "exclude_puzzle_id"
+    )  # *** FIX: Get the ID to exclude ***
+
+    if not all([player_id, domain, difficulty]):
+        return jsonify({"error": "Missing player_id, domain, or difficulty"}), 400
+
+    if domain not in VALID_DOMAINS or difficulty not in VALID_DIFFICULTIES:
+        return jsonify({"error": "Invalid domain or difficulty"}), 400
+
+    # 1. Check for existing, unfinished puzzle (prioritize skipped, then attempted)
+    try:
+        query = (
+            PlayerProgress.query.join(Puzzle)
+            .filter(
+                PlayerProgress.player_id == player_id,
+                Puzzle.domain == domain,
+                Puzzle.difficulty == difficulty,
+                Puzzle.is_ai_generated == True,
+                PlayerProgress.status.in_(["skipped", "attempted"]),
+            )
+            .order_by(
+                PlayerProgress.status.desc()
+            )  # 'skipped' comes before 'attempted'
+        )
+
+        # *** FIX: Exclude the specified puzzle ID from the search ***
+        if exclude_puzzle_id:
+            query = query.filter(Puzzle.puzzle_id != exclude_puzzle_id)
+
+        existing_progress = query.first()
+
+        if existing_progress and existing_progress.puzzle:
+            logging.info(
+                f"Returning existing puzzle (ID: {existing_progress.puzzle_id}, Status: {existing_progress.status}) for Player {player_id}."
+            )
+            # IMPORTANT: Change status from 'skipped' back to 'attempted' so it's not permanently stuck
+            if existing_progress.status == "skipped":
+                existing_progress.status = "attempted"
+                db.session.commit()
+            return jsonify(existing_progress.puzzle.to_dict()), 200
+
+    except Exception as e:
+        logging.exception("DB error checking for existing puzzle.")
+        return jsonify({"error": "Database error while checking for puzzles."}), 500
+
+    # 2. If no existing puzzle, generate a new one
+    logging.info(
+        f"No existing puzzle found for Player {player_id}. Generating a new one for {domain}/{difficulty}."
     )
-    puzzle_data_dict, last_error = None, "No attempts."
+    prompt_content = get_puzzle_generation_prompt(domain, difficulty)
 
     for attempt in range(MAX_RETRIES):
-        logging.info(
-            f"Attempt {attempt + 1}/{MAX_RETRIES} to call OpenAI for puzzle..."
-        )
         try:
             response = ai_client.chat.completions.create(
                 model=OPENAI_MODEL_NAME,
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert puzzle creator. Generate puzzles based on the user's detailed instructions, ensuring the output is a single valid JSON object as specified.",
+                        "content": "You are an expert puzzle creator. Generate puzzles in valid JSON as specified.",
                     },
                     {"role": "user", "content": prompt_content},
                 ],
                 temperature=GENERATION_TEMPERATURE,
                 response_format={"type": "json_object"},
             )
-            raw_response_content = (
-                response.choices[0].message.content
-                if response.choices and response.choices[0].message
-                else ""
-            )
-            logging.debug(
-                f"Raw OpenAI Puzzle Response Content (Att {attempt + 1}): >>>\n{raw_response_content[:300]}...\n<<<"
-            )
-            finish_reason = (
-                response.choices[0].finish_reason if response.choices else "unknown"
-            )
-            if finish_reason != "stop":
-                logging.warning(
-                    f"OpenAI Puzzle Gen Finish Reason (Att {attempt + 1}): {finish_reason}"
-                )
-                last_error = f"AI response incomplete or filtered (Reason: {finish_reason}) on attempt {attempt + 1}."
-                if attempt < MAX_RETRIES - 1:
-                    time.sleep(1.5**attempt)
-                    continue
-                else:
-                    break
-            parsed_data = parse_openai_response_content(
-                raw_response_content, context="puzzle"
-            )
+            raw_response = response.choices[0].message.content
+            puzzle_data = parse_openai_response_content(raw_response)
+
             if (
-                parsed_data
-                and all(
-                    k in parsed_data
-                    for k in ["puzzle_description", "validation_criteria"]
-                )
-                and isinstance(parsed_data["puzzle_description"], str)
-                and parsed_data["puzzle_description"].strip()
-                and isinstance(parsed_data["validation_criteria"], str)
-                and parsed_data["validation_criteria"].strip()
+                puzzle_data
+                and "puzzle_description" in puzzle_data
+                and "validation_criteria" in puzzle_data
             ):
-                original_description = parsed_data["puzzle_description"]
-                restructured_description = (
-                    restructure_code_puzzle_description_if_needed(original_description)
+                # 3. Save the new puzzle and progress
+                new_puzzle = Puzzle(
+                    domain=domain,
+                    difficulty=difficulty,
+                    puzzle_description=puzzle_data["puzzle_description"],
+                    validation_criteria=puzzle_data["validation_criteria"],
+                    is_ai_generated=True,
                 )
-                parsed_data["puzzle_description"] = restructured_description
-                if restructured_description != original_description:
-                    logging.info("Puzzle description restructured by wrapper.")
-                else:
-                    logging.info(
-                        "Puzzle description not significantly changed by wrapper."
-                    )
-                parsed_domain = parsed_data.get("domain", domain)
-                parsed_difficulty = parsed_data.get("difficulty", difficulty)
-                if parsed_domain != domain or parsed_difficulty != difficulty:
-                    logging.warning(
-                        f"AI returned domain/difficulty ({parsed_domain}/{parsed_difficulty}) different from request ({domain}/{difficulty}). Using requested."
-                    )
-                puzzle_data_dict = parsed_data
-                puzzle_data_dict["domain"] = domain
-                puzzle_data_dict["difficulty"] = difficulty
-                logging.info(f"Parsed valid JSON from OpenAI (Att {attempt + 1}).")
-                break
-            else:
-                last_error = f"Bad puzzle format/empty from OpenAI (Att {attempt + 1}). Content: '{raw_response_content[:200]}...'"
-            logging.warning(last_error)
-            if attempt < MAX_RETRIES - 1:
-                time.sleep(1.5**attempt)
+                db.session.add(new_puzzle)
+                db.session.flush()
+
+                new_progress = PlayerProgress(
+                    player_id=player_id,
+                    puzzle_id=new_puzzle.puzzle_id,
+                    status="attempted",
+                )
+                db.session.add(new_progress)
+                db.session.commit()
+
+                logging.info(
+                    f"Saved new puzzle (ID: {new_puzzle.puzzle_id}) and progress for Player {player_id}."
+                )
+                return jsonify(new_puzzle.to_dict()), 201
+
         except Exception as e:
-            last_error = f"OpenAI API call error (Att {attempt + 1}): {e}"
-            logging.exception(last_error)
-        if attempt < MAX_RETRIES - 1:
+            logging.exception(f"Error on OpenAI call, attempt {attempt + 1}")
             time.sleep(1.5**attempt)
 
-    if not puzzle_data_dict:
-        logging.error(
-            f"Failed to get valid puzzle from OpenAI. Last error: {last_error}"
-        )
-        detail = "AI service failed to return valid data."
-        if "filter" in last_error.lower() or "blocked" in last_error.lower():
-            detail = "AI response blocked or filtered."
-        elif (
-            "parse" in last_error.lower()
-            or "keys" in last_error.lower()
-            or "format" in last_error.lower()
-        ):
-            detail = "AI returned unexpected format."
-        return (
-            jsonify(
-                {"error": "AI service failed to generate puzzle.", "details": detail}
-            ),
-            500,
-        )
-    logging.debug(
-        f"Data for new Puzzle object: {json.dumps(puzzle_data_dict, indent=2)}"
+    return (
+        jsonify(
+            {
+                "error": "AI service failed to generate a valid puzzle after multiple attempts."
+            }
+        ),
+        500,
     )
+
+
+@app.route("/api/skip_puzzle", methods=["POST"])
+def skip_puzzle():
+    data = request.get_json()
+    player_id = data.get("player_id")
+    puzzle_id = data.get("puzzle_id")
+    save_progress = data.get("save_progress", False)  # New parameter
+
+    if not player_id or not puzzle_id:
+        return jsonify({"error": "Missing player_id or puzzle_id"}), 400
+
     try:
-        new_puzzle = Puzzle(
-            domain=puzzle_data_dict["domain"],
-            difficulty=puzzle_data_dict["difficulty"],
-            puzzle_description=puzzle_data_dict["puzzle_description"],
-            validation_criteria=puzzle_data_dict["validation_criteria"],
-            is_ai_generated=True,
-        )
-        db.session.add(new_puzzle)
-        db.session.commit()
-        logging.info(f"Saved puzzle ID {new_puzzle.puzzle_id} to DB.")
-        res_payload = new_puzzle.to_dict()
-        return jsonify(res_payload), 200
+        progress = PlayerProgress.query.filter_by(
+            player_id=player_id, puzzle_id=puzzle_id
+        ).first()
+        if not progress:
+            return jsonify({"error": "Progress for this puzzle not found"}), 404
+
+        if progress.status == "attempted":
+            # If save_progress is true, mark as 'skipped', otherwise mark as 'abandoned'
+            progress.status = "skipped" if save_progress else "abandoned"
+            db.session.commit()
+            logging.info(
+                f"Player {player_id} {'skipped and saved' if save_progress else 'abandoned'} Puzzle {puzzle_id}."
+            )
+            return jsonify({"message": f"Puzzle {progress.status} successfully."}), 200
+        else:
+            # If already solved or skipped, just acknowledge
+            return jsonify({"message": f"Puzzle was already {progress.status}."}), 200
+
     except Exception as e:
         db.session.rollback()
-        logging.exception("Error saving puzzle to DB")
-        return jsonify({"error": "Failed to save puzzle."}), 500
+        logging.exception("Error skipping puzzle.")
+        return jsonify({"error": "Database error while skipping puzzle."}), 500
+
+
+@app.route("/api/skipped_puzzles/<int:player_id>", methods=["GET"])
+def get_skipped_puzzles(player_id):
+    try:
+        skipped_progress = (
+            PlayerProgress.query.join(Puzzle)
+            .filter(
+                PlayerProgress.player_id == player_id,
+                PlayerProgress.status == "skipped",
+                Puzzle.is_ai_generated == True,
+            )
+            .all()
+        )
+
+        puzzles_data = [progress.puzzle.to_dict() for progress in skipped_progress]
+        return jsonify(puzzles_data), 200
+    except Exception as e:
+        logging.exception(f"Error fetching skipped puzzles for player {player_id}: {e}")
+        return jsonify({"error": "Internal server error fetching skipped puzzles"}), 500
 
 
 # Generates a hint for a puzzle based on the puzzle and user's last answer
@@ -1051,7 +1229,7 @@ if __name__ == "__main__":
             inspector = sa_inspect(db.engine)
             if not all(
                 inspector.has_table(t.__tablename__)
-                for t in [Player, Puzzle, PlayerProgress]
+                for t in [Player, Puzzle, PlayerProgress, FoundCredential]
             ):
                 logging.warning(
                     "One or more database tables might not exist. Run init_database.py first. "
