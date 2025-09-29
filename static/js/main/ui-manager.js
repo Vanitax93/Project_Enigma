@@ -390,23 +390,30 @@ function updateDynamicContentArea(animateTitle = false) {
         nightmare_motivation: { linkHref: '/nightmare_motivation', audioSrc: '/static/assets/audio/nightmare_motivation.wav', linkText: '> View Nightmare Protocol Briefing_', buttonTitle: 'Play Nightmare Briefing Audio', areaTitle: ':: ALERT :: Advanced Protocols Unlocked ::' }
     };
 
+    // --- BUGFIX: Corrected logic for displaying dynamic content ---
     let currentStateKey = 'introduction';
+    const easyFinalComplete = localStorage.getItem('enigmaEasyFinalComplete') === 'true';
+    const hardFinalComplete = localStorage.getItem('enigmaHardFinalComplete') === 'true';
 
-    if (typeof completionStatus !== 'undefined' && completionStatus?.easy && completionStatus?.hard) {
-        const hardComplete = completionStatus.hard.frontend && completionStatus.hard.backend && completionStatus.hard.database;
-        const easyComplete = completionStatus.easy.frontend && completionStatus.easy.backend && completionStatus.easy.database;
-
-        if (hardComplete) {
-            currentStateKey = 'nightmare_motivation';
-        } else if (easyComplete) {
-            currentStateKey = 'hard_motivation';
-        }
+    if (hardFinalComplete) { // After finishing hard final, show nightmare briefing
+        currentStateKey = 'nightmare_motivation';
+    } else if (easyFinalComplete) { // After finishing easy final, show hard briefing
+        currentStateKey = 'hard_motivation';
     }
+    // Otherwise, it correctly remains 'introduction'
 
     const currentState = states[currentStateKey];
+
+    // Hide the whole area if it's the default state ('introduction')
+    if (currentStateKey === 'introduction') {
+        contentArea.style.display = 'none';
+        return;
+    }
+
     linkButton.href = currentState.linkHref;
     linkButton.textContent = currentState.linkText;
     audioButton.title = currentState.buttonTitle;
+    audioButton.textContent = '[ Play Audio ]'; // <-- BUGFIX: Set initial button text
     contentTitle.textContent = currentState.areaTitle;
 
     const newAudioFullSrc = new URL(currentState.audioSrc, window.location.href).href;

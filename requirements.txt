@@ -1,7 +1,6 @@
-Flask==<version>
-Flask-SQLAlchemy==<version>
-Flask-CORS==<version>
-python-dotenv==<version>
-openai==<version>
-Werkzeug==<version>
-
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+Flask-CORS==4.0.1
+python-dotenv==1.0.1
+openai==1.35.13
+Werkzeug==3.0.3

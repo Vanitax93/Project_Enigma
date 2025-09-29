@@ -230,64 +230,7 @@ var nightmareRiddles = {
             answerHashes: ['86039b0ddadc45f72bbdd69a8847e147'],
             lore: "Rules upon rules. Some override others with brute force. A lesson in hierarchy and control."
         },
-        {
-            riddle: "The button below *should* display a success message when clicked, but the event listener is incorrectly attached. Fix the JavaScript code snippet provided (you can edit it directly) so the button works, then click it.",
-            interactiveElement: `
-                <button id="debug-button-nf3" class="submit-button" style="margin-top: 15px;">Click Me</button>
-                <textarea id="code-editor-nf3" spellcheck="false" style="width: 95%; height: 100px; background: #111; color: #0f0; border: 1px solid #333; font-family: monospace; font-size: 14px; margin-top: 10px; display: block;">
-// Fix this code:
-const button = document.getElementById('debug-button-nf3');
-const feedback = document.getElementById('feedbackArea'); // Assuming feedbackArea exists
 
-// Incorrect attachment:
-document.addEventListener('click', () => {
-  if (feedback) {
-      feedback.textContent = ':: Signal Acquired :: Listener Fixed.';
-      feedback.className = 'feedback correct';
-      // Call the success handler for the riddle framework
-      handleInteractiveSuccess('event-listener-fixed-nf3');
-  }
-});
-                </textarea>
-                <button onclick="runEditedCodeNF3()" class="submit-button" style="font-size: 14px; padding: 5px 10px; margin-top: 5px;">Run Edited Code</button>
-            `,
-            setupScript: `
-                window.runEditedCodeNF3 = function() {
-                  const code = document.getElementById('code-editor-nf3').value;
-                  const feedback = document.getElementById('feedbackArea');
-                  try {
-                    // Clear previous listeners if any (simple approach)
-                    const oldButton = document.getElementById('debug-button-nf3');
-                    const newButton = oldButton.cloneNode(true);
-                    oldButton.parentNode.replaceChild(newButton, oldButton);
-
-                    // Run the user's edited code
-                    new Function('handleInteractiveSuccess', code)(handleInteractiveSuccess); // Pass success handler
-                    if(feedback) {
-                         feedback.textContent = ':: Code executed. Try clicking the button. ::';
-                         feedback.className = 'feedback neutral';
-                    }
-                  } catch (e) {
-                    console.error("Error running edited code:", e);
-                     if(feedback) {
-                         feedback.textContent = ':: Syntax Error in Code :: Check console (F12).';
-                         feedback.className = 'feedback incorrect';
-                     }
-                  }
-                }
-                // Initial dummy listener to ensure button exists for the code
-                document.getElementById('debug-button-nf3').addEventListener('click', () => {
-                    const feedback = document.getElementById('feedbackArea');
-                    if(feedback) {
-                         feedback.textContent = ':: Listener Not Correctly Attached :: Edit and run the code.';
-                         feedback.className = 'feedback incorrect';
-                    }
-                });
-            `,
-            solutionCheckType: 'event',
-            successValue: 'event-listener-fixed-nf3',
-            lore: "Broken connections. Misdirected signals. The system requires precise instructions."
-        },
         {
             riddle: "A sequence is hidden below. Use the browser console (F12 -> Console) to execute JavaScript. Find the container div with the ID `sequence-container-nf4`. Inside it, find the child element with the data attribute `data-target='true'`. Change its text content to `UNLOCKED`. If successful, the system will detect it.",
             interactiveElement: `

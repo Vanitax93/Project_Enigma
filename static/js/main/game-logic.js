@@ -262,12 +262,14 @@ function goBackToLanding(confirmAbort = false) {
     showView(document.getElementById('initialHeader'));
     showView(document.getElementById('finalChallengeButtons'));
     showView(document.getElementById('terminalAccessArea'));
-    showView(document.getElementById('puzzleArchivesButton')); // Show archives button
+    showView(document.getElementById('dynamicContentArea'));
+    showView(document.getElementById('puzzleArchivesButton'));
 
+    // Re-evaluate what should be visible on the main menu
     updateFinalButtonsVisibility();
     updateNightmareVisibility();
     updateAccessTerminalButtonVisibility();
-
+    updateDynamicContentArea();
     console.log("Returned to main menu.");
 }
 
